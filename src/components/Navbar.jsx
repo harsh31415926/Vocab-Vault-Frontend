@@ -1,12 +1,16 @@
 import React from 'react';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, LayoutGrid, List } from 'lucide-react';
 
 export default function Navbar({ 
   activeView, 
   activeTag, 
   searchQuery, 
   setSearchQuery, 
-  onAddClick 
+  onAddClick,
+  viewMode,
+  setViewMode,
+  sortBy,
+  setSortBy
 }) {
   const getHeaderDetails = () => {
     if (activeTag) {
@@ -79,6 +83,35 @@ export default function Navbar({
               onChange={handleSearchChange}
             />
           </div>
+
+          <select 
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value)} 
+            className="sort-select"
+            title="Sort vocabulary"
+          >
+            <option value="recent">Recently Added</option>
+            <option value="oldest">Oldest First</option>
+            <option value="alpha">Alphabetical</option>
+          </select>
+
+          <div className="view-toggle">
+            <button 
+              className={`view-toggle-btn ${viewMode === 'card' ? 'active' : ''}`}
+              onClick={() => setViewMode('card')}
+              title="Card View"
+            >
+              <LayoutGrid size={15} />
+            </button>
+            <button 
+              className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
+              title="List View"
+            >
+              <List size={15} />
+            </button>
+          </div>
+
           <button 
             className="add-vocab-btn" 
             onClick={onAddClick}

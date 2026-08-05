@@ -18,6 +18,10 @@ export default function App() {
   const [activeView, setActiveView] = useState('dashboard'); // 'dashboard', 'favorites', 'recent', 'revision', 'settings', 'about'
   const [activeTag, setActiveTag] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // View & Sorting Preferences
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('vocab_vault_view_mode') || 'card');
+  const [sortBy, setSortBy] = useState('recent'); // 'recent', 'oldest', 'alpha'
   
   // Interactive UI States
   const [selectedVocab, setSelectedVocab] = useState(null);
@@ -53,6 +57,11 @@ export default function App() {
     };
     checkAuth();
   }, []);
+
+  // Persist view mode preference
+  useEffect(() => {
+    localStorage.setItem('vocab_vault_view_mode', viewMode);
+  }, [viewMode]);
 
   // 2. Fetch vocabularies function
   const fetchVocabularies = async () => {
@@ -185,8 +194,17 @@ export default function App() {
       });
     }
 
+    // Apply client-side sorting
+    if (sortBy === 'alpha') {
+      result.sort((a, b) => (a.word || '').localeCompare(b.word || ''));
+    } else if (sortBy === 'oldest') {
+      result.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    } else if (sortBy === 'recent') {
+      result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+
     return result;
-  }, [vocabularies, activeView, activeTag, searchQuery]);
+  }, [vocabularies, activeView, activeTag, searchQuery, sortBy]);
 
   if (!initialized) {
     return (
@@ -228,36 +246,42 @@ export default function App() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onAddClick={handleAddClick}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
         />
 
         {/* Dynamic Views rendering */}
         {isListView && (
-          <div className="vocab-grid">
-            {/* Show inline blank draft card at the beginning of the grid */}
-            {draftCard && (
-              <VocabCard 
-                isDraft={true} 
-                onSaveDraft={handleSaveDraft} 
-                onCancelDraft={() => setDraftCard(false)} 
-              />
-            )}
+          viewMode === 'list' ? (
+            <div className="vocab-list">
+              {/* Show inline blank draft row at the beginning of the list */}
+              {draftCard && (
+                <VocabCard 
+                  isDraft={true} 
+                  viewMode="list"
+                  onSaveDraft={handleSaveDraft} 
+                  onCancelDraft={() => setDraftCard(false)} 
+                />
+              )}
 
-            {filteredVocabularies.map((vocab) => (
-              <VocabCard
-                key={vocab.id}
-                vocab={vocab}
-                isDraft={false}
-                onCardClick={setSelectedVocab}
-                onToggleFavorite={handleToggleFavorite}
-                onDuplicate={handleDuplicate}
-                onDeleteClick={setConfirmDeleteVocab}
-              />
-            ))}
+              {filteredVocabularies.map((vocab) => (
+                <VocabCard
+                  key={vocab.id}
+                  vocab={vocab}
+                  isDraft={false}
+                  viewMode="list"
+                  onCardClick={setSelectedVocab}
+                  onToggleFavorite={handleToggleFavorite}
+                  onDuplicate={handleDuplicate}
+                  onDeleteClick={setConfirmDeleteVocab}
+                />
+              ))}
 
-            {/* Empty States */}
-            {filteredVocabularies.length === 0 && !draftCard && (
-              <div style={{ gridColumn: '1 / -1' }}>
-                <div className="empty-state">
+              {/* Empty States */}
+              {filteredVocabularies.length === 0 && !draftCard && (
+                <div className="empty-state" style={{ border: 'none', background: 'transparent', padding: '40px 24px' }}>
                   <h3 className="empty-state-title">No Vocabulary Found</h3>
                   <p className="empty-state-desc">
                     {searchQuery 
@@ -274,9 +298,57 @@ export default function App() {
                     </button>
                   )}
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <div className="vocab-grid">
+              {/* Show inline blank draft card at the beginning of the grid */}
+              {draftCard && (
+                <VocabCard 
+                  isDraft={true} 
+                  viewMode="card"
+                  onSaveDraft={handleSaveDraft} 
+                  onCancelDraft={() => setDraftCard(false)} 
+                />
+              )}
+
+              {filteredVocabularies.map((vocab) => (
+                <VocabCard
+                  key={vocab.id}
+                  vocab={vocab}
+                  isDraft={false}
+                  viewMode="card"
+                  onCardClick={setSelectedVocab}
+                  onToggleFavorite={handleToggleFavorite}
+                  onDuplicate={handleDuplicate}
+                  onDeleteClick={setConfirmDeleteVocab}
+                />
+              ))}
+
+              {/* Empty States */}
+              {filteredVocabularies.length === 0 && !draftCard && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <div className="empty-state">
+                    <h3 className="empty-state-title">No Vocabulary Found</h3>
+                    <p className="empty-state-desc">
+                      {searchQuery 
+                        ? 'No cards in your vault match the active search parameters.'
+                        : activeTag
+                        ? `No vocabulary cards contain the tag #${activeTag}.`
+                        : activeView === 'favorites'
+                        ? "You haven't marked any vocabulary entries as favorites yet."
+                        : 'Your vocabulary vault is empty. Begin recording new words now.'}
+                    </p>
+                    {!searchQuery && (
+                      <button className="empty-state-btn" onClick={handleAddClick}>
+                        Record First Word
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
         )}
 
         {activeView === 'revision' && (

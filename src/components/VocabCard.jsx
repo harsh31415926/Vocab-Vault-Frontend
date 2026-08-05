@@ -9,7 +9,8 @@ export default function VocabCard({
   onCardClick, 
   onToggleFavorite, 
   onDuplicate, 
-  onDeleteClick 
+  onDeleteClick,
+  viewMode = 'card'
 }) {
   const [word, setWord] = useState('');
   const [meaning, setMeaning] = useState('');
@@ -56,6 +57,43 @@ export default function VocabCard({
   };
 
   if (isDraft) {
+    if (viewMode === 'list') {
+      return (
+        <div className="vocab-row draft-mode" onClick={(e) => e.stopPropagation()}>
+          <div className="vocab-row-inputs">
+            <input
+              type="text"
+              ref={wordInputRef}
+              placeholder="Word..."
+              className="vocab-row-input word-input"
+              value={word}
+              onChange={(e) => setWord(e.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="Meaning..."
+              className="vocab-row-input meaning-input"
+              value={meaning}
+              onChange={(e) => setMeaning(e.target.value)}
+            />
+          </div>
+          <div className="draft-actions" style={{ marginTop: 0 }}>
+            <button className="draft-btn cancel" onClick={handleCancel}>
+              Discard
+            </button>
+            <button 
+              className="draft-btn save" 
+              onClick={handleSave}
+              disabled={!word.trim() || !meaning.trim()}
+              style={{ opacity: (!word.trim() || !meaning.trim()) ? 0.5 : 1 }}
+            >
+              Create
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="vocab-card draft-mode" onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -87,6 +125,66 @@ export default function VocabCard({
           >
             Create
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (viewMode === 'list') {
+    return (
+      <div className="vocab-row" onClick={() => onCardClick(vocab)}>
+        <div className="vocab-row-left">
+          <button 
+            className={`row-favorite-btn ${vocab.is_favorite ? 'favorite' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(vocab);
+            }}
+            title={vocab.is_favorite ? 'Remove from favorites' : 'Mark as favorite'}
+          >
+            <Star size={14} fill={vocab.is_favorite ? 'var(--favorite-color)' : 'none'} />
+          </button>
+          
+          <span className="vocab-row-word">{vocab.word}</span>
+          <span className="vocab-row-divider">•</span>
+          <span className="vocab-row-meaning" title={vocab.meaning}>
+            {vocab.meaning}
+          </span>
+        </div>
+
+        <div className="vocab-row-right" onClick={(e) => e.stopPropagation()}>
+          {vocab.notes && (
+            <span className="vocab-row-notes-indicator" title="Has personal notes">
+              📝
+            </span>
+          )}
+
+          <div className="vocab-row-tags">
+            {vocab.tags && vocab.tags.slice(0, 1).map((tag, idx) => (
+              <span key={idx} className="tag-badge" style={{ fontSize: '10px', padding: '1px 6px' }}>{tag}</span>
+            ))}
+          </div>
+
+          <span className="vocab-row-date">
+            {formatDate(vocab.created_at)}
+          </span>
+
+          <div className="vocab-row-actions">
+            <button 
+              className="card-action-btn"
+              onClick={() => onDuplicate(vocab)}
+              title="Duplicate Word"
+            >
+              <Copy size={13} />
+            </button>
+            <button 
+              className="card-action-btn"
+              onClick={() => onDeleteClick(vocab)}
+              title="Delete Word"
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
         </div>
       </div>
     );
