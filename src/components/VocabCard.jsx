@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Star, Copy, Trash2, Tag, Calendar } from 'lucide-react';
+import { Star, Copy, Trash2 } from 'lucide-react';
 
 export default function VocabCard({ 
   vocab, 
@@ -51,7 +51,7 @@ export default function VocabCard({
         day: 'numeric', 
         year: 'numeric' 
       });
-    } catch (e) {
+    } catch {
       return '';
     }
   };

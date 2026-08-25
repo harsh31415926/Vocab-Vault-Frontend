@@ -8,40 +8,87 @@ import VocabModal from './components/VocabModal';
 import RevisionMode from './components/RevisionMode';
 import SettingsView from './components/SettingsView';
 import AboutView from './components/AboutView';
+import AnimatedBackground from './components/AnimatedBackground';
+import ToastNotification from './components/ToastNotification';
+import CommandPalette from './components/CommandPalette';
+import StatsBar from './components/StatsBar';
 import { AlertTriangle, BookOpen } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [vocabularies, setVocabularies] = useState([]);
-  
+
+  // Theme State
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('vocab_vault_theme');
+    if (saved) return saved;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  });
+
   // Navigation & Filtering States
-  const [activeView, setActiveView] = useState('dashboard'); // 'dashboard', 'favorites', 'recent', 'revision', 'settings', 'about'
+  const [activeView, setActiveView] = useState('dashboard');
   const [activeTag, setActiveTag] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   // View & Sorting Preferences
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('vocab_vault_view_mode') || 'card');
-  const [sortBy, setSortBy] = useState('recent'); // 'recent', 'oldest', 'alpha'
-  
+  const [sortBy, setSortBy] = useState('recent');
+
   // Interactive UI States
   const [selectedVocab, setSelectedVocab] = useState(null);
   const [draftCard, setDraftCard] = useState(false);
   const [confirmDeleteVocab, setConfirmDeleteVocab] = useState(null);
-  
+
+  // New UI States
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [toasts, setToasts] = useState([]);
+
   // Loading & App Initialization States
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
+
+  // Apply Theme
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.style.colorScheme = theme;
+    localStorage.setItem('vocab_vault_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
+  const addToast = (message, type = 'info') => {
+    const id = Date.now().toString();
+    setToasts(prev => [...prev, { id, message, type }]);
+  };
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Cmd+K or Ctrl+K for Command Palette
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // 1. Initial Auth Check on Mount
   useEffect(() => {
     const checkAuth = async () => {
       if (isLoggedIn()) {
         try {
-          // Fetch vocabularies to verify the token is valid
           const data = await api.getVocabularies();
           setVocabularies(data);
-          
-          // Recreate a light user object from storage
+
           const token = localStorage.getItem('vocab_vault_token');
           if (token) {
             const payload = JSON.parse(atob(token.split('.')[1]));
@@ -58,12 +105,10 @@ export default function App() {
     checkAuth();
   }, []);
 
-  // Persist view mode preference
   useEffect(() => {
     localStorage.setItem('vocab_vault_view_mode', viewMode);
   }, [viewMode]);
 
-  // 2. Fetch vocabularies function
   const fetchVocabularies = async () => {
     if (!isLoggedIn()) return;
     setLoading(true);
@@ -72,6 +117,7 @@ export default function App() {
       setVocabularies(data);
     } catch (err) {
       console.error('Failed to fetch vocabularies:', err);
+      addToast('Failed to fetch vocabularies', 'error');
     } finally {
       setLoading(false);
     }
@@ -80,6 +126,7 @@ export default function App() {
   const handleAuthSuccess = (userData) => {
     setUser(userData);
     fetchVocabularies();
+    addToast('Successfully authenticated', 'success');
   };
 
   const handleLogout = () => {
@@ -89,112 +136,116 @@ export default function App() {
     setActiveView('dashboard');
     setActiveTag(null);
     setSearchQuery('');
+    addToast('Logged out successfully', 'info');
   };
 
-  // 3. Floating Add Button Action
   const handleAddClick = () => {
     setActiveView('dashboard');
     setActiveTag(null);
     setSearchQuery('');
-    setDraftCard(true); // Inserts blank draft card at grid index 0
+    setDraftCard(true);
   };
 
-  // 4. API Event: Save Draft Word
   const handleSaveDraft = async (newWordData) => {
     try {
       const saved = await api.createVocabulary(newWordData);
-      setVocabularies([saved, ...vocabularies]); // Add to the front of the local list
+      setVocabularies((current) => [saved, ...current]);
       setDraftCard(false);
+      addToast('Vocabulary word created', 'success');
     } catch (err) {
-      alert(err.message || 'Failed to save vocabulary word.');
+      addToast(err.message || 'Failed to save vocabulary word.', 'error');
     }
   };
 
-  // 5. API Event: Toggle Favorite
+  const handleImportVocabulary = async (entries) => {
+    if (!entries.length) return;
+    setLoading(true);
+    try {
+      const imported = [];
+      for (const entry of entries) {
+        imported.push(await api.createVocabulary(entry));
+      }
+      setVocabularies((current) => [...imported, ...current]);
+      addToast(`${imported.length} ${imported.length === 1 ? 'entry' : 'entries'} imported`, 'success');
+    } catch (err) {
+      addToast(err.message || 'Import stopped before all entries were saved.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleToggleFavorite = async (vocab) => {
     try {
       const updated = await api.updateVocabulary(vocab.id, {
         ...vocab,
         is_favorite: !vocab.is_favorite
       });
-      // Replace in local state list
-      setVocabularies(vocabularies.map(v => v.id === vocab.id ? updated : v));
-    } catch (err) {
-      console.error('Failed to toggle favorite status:', err);
+      setVocabularies((current) => current.map(v => v.id === vocab.id ? updated : v));
+      addToast(updated.is_favorite ? 'Added to favorites' : 'Removed from favorites', 'success');
+    } catch {
+      addToast('Failed to toggle favorite status', 'error');
     }
   };
 
-  // 6. API Event: Duplicate Card
   const handleDuplicate = async (vocab) => {
     try {
       const duplicated = await api.duplicateVocabulary(vocab.id);
-      setVocabularies([duplicated, ...vocabularies]);
-    } catch (err) {
-      alert('Failed to duplicate card.');
+      setVocabularies((current) => [duplicated, ...current]);
+      addToast('Vocabulary duplicated', 'success');
+    } catch {
+      addToast('Failed to duplicate card', 'error');
     }
   };
 
-  // 7. API Event: Delete Confirmation Flow
   const handleDeleteConfirm = async () => {
     if (!confirmDeleteVocab) return;
     try {
       await api.deleteVocabulary(confirmDeleteVocab.id);
-      setVocabularies(vocabularies.filter(v => v.id !== confirmDeleteVocab.id));
+      setVocabularies((current) => current.filter(v => v.id !== confirmDeleteVocab.id));
       setConfirmDeleteVocab(null);
-      setSelectedVocab(null); // Close the detail modal too if open
-    } catch (err) {
-      alert('Failed to delete vocabulary card.');
+      setSelectedVocab(null);
+      addToast('Vocabulary deleted permanently', 'success');
+    } catch {
+      addToast('Failed to delete vocabulary card.', 'error');
     }
   };
 
-  // 8. API Event: Save Card updates inside Modal
   const handleSaveModal = async (id, updatedData) => {
     try {
       const saved = await api.updateVocabulary(id, updatedData);
-      setVocabularies(vocabularies.map(v => v.id === id ? saved : v));
+      setVocabularies((current) => current.map(v => v.id === id ? saved : v));
       setSelectedVocab(null);
+      addToast('Vocabulary changes saved', 'success');
     } catch (err) {
-      alert(err.message || 'Failed to save vocabulary updates.');
+      addToast(err.message || 'Failed to save vocabulary updates.', 'error');
     }
   };
 
-  // 9. Client-side Instant Filter Logic
   const filteredVocabularies = React.useMemo(() => {
     let result = [...vocabularies];
 
-    // Sidebar View filters
     if (activeView === 'favorites') {
       result = result.filter(v => v.is_favorite);
     } else if (activeView === 'recent') {
-      // Return 15 latest words
       result = result.slice(0, 15);
     }
 
-    // Sidebar Custom Tag filter
     if (activeTag) {
       result = result.filter(v => v.tags && v.tags.includes(activeTag));
     }
 
-    // Search bar live filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       result = result.filter(v => {
         const wordMatch = v.word?.toLowerCase().includes(query);
         const meaningMatch = v.meaning?.toLowerCase().includes(query);
         const notesMatch = v.notes?.toLowerCase().includes(query);
-        
-        const synonymMatch = v.synonyms && v.synonyms.some(syn => 
-          syn.toLowerCase().includes(query)
-        );
-        const tagMatch = v.tags && v.tags.some(tag => 
-          tag.toLowerCase().includes(query)
-        );
-
+        const synonymMatch = v.synonyms && v.synonyms.some(syn => syn.toLowerCase().includes(query));
+        const tagMatch = v.tags && v.tags.some(tag => tag.toLowerCase().includes(query));
         return wordMatch || meaningMatch || notesMatch || synonymMatch || tagMatch;
       });
     }
 
-    // Apply client-side sorting
     if (sortBy === 'alpha') {
       result.sort((a, b) => (a.word || '').localeCompare(b.word || ''));
     } else if (sortBy === 'oldest') {
@@ -209,38 +260,47 @@ export default function App() {
   if (!initialized) {
     return (
       <div className="auth-container">
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', zIndex: 10 }}>
           <BookOpen className="sidebar-logo-icon" size={32} style={{ animation: 'pulse 1.5s infinite' }} />
           <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Loading Vault...</span>
         </div>
+        <AnimatedBackground theme="dark" />
       </div>
     );
   }
 
   // Render Authentication screen if user is logged out
   if (!user) {
-    return <AuthScreen onAuthSuccess={handleAuthSuccess} />;
+    return (
+      <>
+        <AnimatedBackground theme={theme} />
+        <AuthScreen onAuthSuccess={handleAuthSuccess} />
+      </>
+    );
   }
 
   const isListView = activeView === 'dashboard' || activeView === 'favorites' || activeView === 'recent';
 
   return (
     <div className="app-container">
-      {/* 1. Sidebar Nav */}
-      <Sidebar 
-        activeView={activeView} 
-        setActiveView={setActiveView} 
-        activeTag={activeTag} 
+      <AnimatedBackground theme={theme} />
+
+      <Sidebar
+        activeView={activeView}
+        setActiveView={setActiveView}
+        activeTag={activeTag}
         setActiveTag={setActiveTag}
         vocabularies={vocabularies}
         user={user}
         onLogout={handleLogout}
+        theme={theme}
+        onThemeToggle={toggleTheme}
+        isMobileMenuOpen={isMobileMenuOpen}
+        onCloseMobileMenu={() => setIsMobileMenuOpen(false)}
       />
 
-      {/* 2. Content Area */}
       <main className="app-content">
-        {/* Top Header & Search bar */}
-        <Navbar 
+        <Navbar
           activeView={activeView}
           activeTag={activeTag}
           searchQuery={searchQuery}
@@ -250,19 +310,35 @@ export default function App() {
           setViewMode={setViewMode}
           sortBy={sortBy}
           setSortBy={setSortBy}
+          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+          vocabularyCount={filteredVocabularies.length}
+          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         />
 
-        {/* Dynamic Views rendering */}
+        {isListView && (
+          <div style={{ marginBottom: '8px' }}>
+            <StatsBar vocabularies={filteredVocabularies} />
+          </div>
+        )}
+
+        {isListView && loading && (
+          <div className="loading-state" role="status">
+            <div className="loading-line loading-line-wide" />
+            <div className="loading-line" />
+            <div className="loading-line loading-line-short" />
+            <span>Syncing your vocabulary vault…</span>
+          </div>
+        )}
+
         {isListView && (
           viewMode === 'list' ? (
             <div className="vocab-list">
-              {/* Show inline blank draft row at the beginning of the list */}
               {draftCard && (
-                <VocabCard 
-                  isDraft={true} 
+                <VocabCard
+                  isDraft={true}
                   viewMode="list"
-                  onSaveDraft={handleSaveDraft} 
-                  onCancelDraft={() => setDraftCard(false)} 
+                  onSaveDraft={handleSaveDraft}
+                  onCancelDraft={() => setDraftCard(false)}
                 />
               )}
 
@@ -279,12 +355,11 @@ export default function App() {
                 />
               ))}
 
-              {/* Empty States */}
-              {filteredVocabularies.length === 0 && !draftCard && (
+              {filteredVocabularies.length === 0 && !draftCard && !loading && (
                 <div className="empty-state" style={{ border: 'none', background: 'transparent', padding: '40px 24px' }}>
                   <h3 className="empty-state-title">No Vocabulary Found</h3>
                   <p className="empty-state-desc">
-                    {searchQuery 
+                    {searchQuery
                       ? 'No cards in your vault match the active search parameters.'
                       : activeTag
                       ? `No vocabulary cards contain the tag #${activeTag}.`
@@ -302,13 +377,12 @@ export default function App() {
             </div>
           ) : (
             <div className="vocab-grid">
-              {/* Show inline blank draft card at the beginning of the grid */}
               {draftCard && (
-                <VocabCard 
-                  isDraft={true} 
+                <VocabCard
+                  isDraft={true}
                   viewMode="card"
-                  onSaveDraft={handleSaveDraft} 
-                  onCancelDraft={() => setDraftCard(false)} 
+                  onSaveDraft={handleSaveDraft}
+                  onCancelDraft={() => setDraftCard(false)}
                 />
               )}
 
@@ -325,13 +399,12 @@ export default function App() {
                 />
               ))}
 
-              {/* Empty States */}
-              {filteredVocabularies.length === 0 && !draftCard && (
+              {filteredVocabularies.length === 0 && !draftCard && !loading && (
                 <div style={{ gridColumn: '1 / -1' }}>
                   <div className="empty-state">
                     <h3 className="empty-state-title">No Vocabulary Found</h3>
                     <p className="empty-state-desc">
-                      {searchQuery 
+                      {searchQuery
                         ? 'No cards in your vault match the active search parameters.'
                         : activeTag
                         ? `No vocabulary cards contain the tag #${activeTag}.`
@@ -356,7 +429,7 @@ export default function App() {
         )}
 
         {activeView === 'settings' && (
-          <SettingsView vocabularies={vocabularies} user={user} />
+          <SettingsView vocabularies={vocabularies} user={user} onImportVocabulary={handleImportVocabulary} />
         )}
 
         {activeView === 'about' && (
@@ -364,9 +437,9 @@ export default function App() {
         )}
       </main>
 
-      {/* 3. Detail edit Modal */}
+      {/* Modals & Overlays */}
       {selectedVocab && (
-        <VocabModal 
+        <VocabModal
           vocab={selectedVocab}
           onClose={() => setSelectedVocab(null)}
           onSave={handleSaveModal}
@@ -374,7 +447,6 @@ export default function App() {
         />
       )}
 
-      {/* 4. Delete Confirmation Dialog Overlay */}
       {confirmDeleteVocab && (
         <div className="modal-backdrop" onClick={() => setConfirmDeleteVocab(null)} style={{ zIndex: 1100 }}>
           <div className="modal-content confirm-dialog-content" onClick={(e) => e.stopPropagation()}>
@@ -386,22 +458,32 @@ export default function App() {
               Are you sure you want to permanently delete <strong>"{confirmDeleteVocab.word}"</strong> from your vocabulary vault? This action cannot be undone.
             </p>
             <div className="confirm-dialog-buttons">
-              <button 
-                className="confirm-btn cancel" 
-                onClick={() => setConfirmDeleteVocab(null)}
-              >
+              <button className="confirm-btn cancel" onClick={() => setConfirmDeleteVocab(null)}>
                 Cancel
               </button>
-              <button 
-                className="confirm-btn delete" 
-                onClick={handleDeleteConfirm}
-              >
+              <button className="confirm-btn delete" onClick={handleDeleteConfirm}>
                 Permanently Delete
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        vocabularies={vocabularies}
+        onSelectVocab={(vocab) => {
+          setSelectedVocab(vocab);
+          setIsCommandPaletteOpen(false);
+        }}
+        onNavigate={(viewId) => {
+          setActiveView(viewId);
+          setActiveTag(null);
+        }}
+      />
+
+      <ToastNotification toasts={toasts} onDismiss={removeToast} />
     </div>
   );
 }

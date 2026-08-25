@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Layers, Check, RefreshCw, ChevronRight } from 'lucide-react';
 
 export default function RevisionMode({ vocabularies }) {
@@ -8,18 +8,18 @@ export default function RevisionMode({ vocabularies }) {
   const [completed, setCompleted] = useState(false);
 
   // Initialize and shuffle deck
-  const startSession = () => {
+  const startSession = useCallback(() => {
     if (vocabularies.length === 0) return;
     const shuffled = [...vocabularies].sort(() => Math.random() - 0.5);
     setDeck(shuffled);
     setCurrentIndex(0);
     setShowMeaning(false);
     setCompleted(false);
-  };
+  }, [vocabularies]);
 
   useEffect(() => {
     startSession();
-  }, [vocabularies]);
+  }, [startSession]);
 
   if (vocabularies.length === 0) {
     return (
