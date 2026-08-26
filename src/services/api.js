@@ -20,6 +20,8 @@ export const isLoggedIn = () => !!authToken;
 
 const fetchAPI = async (endpoint, options = {}) => {
   const url = `${API_BASE}${endpoint}`;
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 15000);
   
   const headers = {
     'Content-Type': 'application/json',
@@ -30,18 +32,28 @@ const fetchAPI = async (endpoint, options = {}) => {
     headers['Authorization'] = `Bearer ${authToken}`;
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data.error || 'Something went wrong');
+    if (!response.ok) {
+      throw new Error(data.error || 'Something went wrong');
+    }
+
+    return data;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('The vocabulary service is taking too long to respond. Please try again.');
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
   }
-
-  return data;
 };
 
 export const api = {
