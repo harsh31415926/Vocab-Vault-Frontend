@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Search, Plus, LayoutGrid, List, Menu, SlidersHorizontal } from 'lucide-react';
+import { Search, Plus, LayoutGrid, List, Menu, SlidersHorizontal, ListChecks, CheckSquare, Trash2, X } from 'lucide-react';
 
 export default function Navbar({
   activeView,
@@ -7,6 +7,15 @@ export default function Navbar({
   searchQuery,
   setSearchQuery,
   onAddClick,
+  onBulkAddClick,
+  isSelectionMode,
+  onEnterSelection,
+  onCancelSelection,
+  selectedCount,
+  visibleCount,
+  allVisibleSelected,
+  onToggleSelectAllVisible,
+  onBulkDeleteClick,
   viewMode,
   setViewMode,
   sortBy,
@@ -81,7 +90,24 @@ export default function Navbar({
             <button className={`view-toggle-btn ${viewMode === 'card' ? 'active' : ''}`} onClick={() => setViewMode('card')} title="Card view" aria-label="Card view"><LayoutGrid size={15} /></button>
             <button className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')} title="List view" aria-label="List view"><List size={15} /></button>
           </div>
-          <button className="add-vocab-btn" onClick={onAddClick} title="Add a new word" aria-label="Add a new word"><Plus size={22} /></button>
+          {isSelectionMode ? (
+            <div className="selection-toolbar" role="toolbar" aria-label="Vocabulary selection actions">
+              <button className="selection-cancel-btn" onClick={onCancelSelection}><X size={15} /> Cancel</button>
+              <button className="selection-select-all-btn" onClick={onToggleSelectAllVisible} disabled={!visibleCount}>
+                <CheckSquare size={15} /> {allVisibleSelected ? 'Deselect visible' : 'Select visible'}
+              </button>
+              <span className="selection-count">{selectedCount} selected</span>
+              <button className="selection-delete-btn" onClick={onBulkDeleteClick} disabled={!selectedCount}>
+                <Trash2 size={15} /> Delete selected
+              </button>
+            </div>
+          ) : (
+            <>
+              <button className="select-vocab-btn" onClick={onEnterSelection} title="Select vocabulary entries"><ListChecks size={16} /> <span>Select</span></button>
+              <button className="bulk-add-btn" onClick={onBulkAddClick} title="Add multiple words"><Plus size={15} /> <span>Bulk add</span></button>
+              <button className="add-vocab-btn" onClick={onAddClick} title="Add a new word" aria-label="Add a new word"><Plus size={22} /></button>
+            </>
+          )}
         </div>
       )}
       {!isListView && <div className="header-utility-mark"><SlidersHorizontal size={17} /><span>Focused view</span></div>}

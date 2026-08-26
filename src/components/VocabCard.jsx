@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Star, Copy, Trash2 } from 'lucide-react';
+import { Star, Copy, Trash2, Check } from 'lucide-react';
 
 export default function VocabCard({ 
   vocab, 
   isDraft, 
   onSaveDraft, 
+  isSaving = false,
   onCancelDraft, 
   onCardClick, 
   onToggleFavorite, 
   onDuplicate, 
   onDeleteClick,
+  isSelectionMode = false,
+  isSelected = false,
+  isRemoving = false,
+  onToggleSelection,
   viewMode = 'card'
 }) {
   const [word, setWord] = useState('');
@@ -84,10 +89,10 @@ export default function VocabCard({
             <button 
               className="draft-btn save" 
               onClick={handleSave}
-              disabled={!word.trim() || !meaning.trim()}
-              style={{ opacity: (!word.trim() || !meaning.trim()) ? 0.5 : 1 }}
+              disabled={isSaving || !word.trim() || !meaning.trim()}
+              style={{ opacity: (isSaving || !word.trim() || !meaning.trim()) ? 0.5 : 1 }}
             >
-              Create
+              {isSaving ? <><span className="button-spinner" /> Creating…</> : 'Create'}
             </button>
           </div>
         </div>
@@ -120,10 +125,10 @@ export default function VocabCard({
           <button 
             className="draft-btn save" 
             onClick={handleSave}
-            disabled={!word.trim() || !meaning.trim()}
-            style={{ opacity: (!word.trim() || !meaning.trim()) ? 0.5 : 1 }}
+            disabled={isSaving || !word.trim() || !meaning.trim()}
+            style={{ opacity: (isSaving || !word.trim() || !meaning.trim()) ? 0.5 : 1 }}
           >
-            Create
+            {isSaving ? <><span className="button-spinner" /> Creating…</> : 'Create'}
           </button>
         </div>
       </div>
@@ -132,8 +137,22 @@ export default function VocabCard({
 
   if (viewMode === 'list') {
     return (
-      <div className="vocab-row" onClick={() => onCardClick(vocab)}>
+      <div className={`vocab-row ${isSelected ? 'is-selected' : ''} ${isRemoving ? 'is-removing' : ''}`} onClick={() => onCardClick(vocab)}>
         <div className="vocab-row-left">
+          {isSelectionMode && (
+            <button
+              type="button"
+              className={`vocab-select-control ${isSelected ? 'selected' : ''}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleSelection(vocab);
+              }}
+              aria-label={`${isSelected ? 'Deselect' : 'Select'} ${vocab.word}`}
+              aria-pressed={isSelected}
+            >
+              {isSelected && <Check size={13} strokeWidth={2.5} />}
+            </button>
+          )}
           <button 
             className={`row-favorite-btn ${vocab.is_favorite ? 'favorite' : ''}`}
             onClick={(e) => {
@@ -191,9 +210,25 @@ export default function VocabCard({
   }
 
   return (
-    <div className="vocab-card" onClick={() => onCardClick(vocab)}>
+    <div className={`vocab-card ${isSelected ? 'is-selected' : ''} ${isRemoving ? 'is-removing' : ''}`} onClick={() => onCardClick(vocab)}>
       <div className="vocab-card-header">
-        <h3 className="vocab-card-word">{vocab.word}</h3>
+        <div className="vocab-card-word-wrap">
+          {isSelectionMode && (
+            <button
+              type="button"
+              className={`vocab-select-control ${isSelected ? 'selected' : ''}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleSelection(vocab);
+              }}
+              aria-label={`${isSelected ? 'Deselect' : 'Select'} ${vocab.word}`}
+              aria-pressed={isSelected}
+            >
+              {isSelected && <Check size={13} strokeWidth={2.5} />}
+            </button>
+          )}
+          <h3 className="vocab-card-word">{vocab.word}</h3>
+        </div>
         <div className="vocab-card-actions" onClick={(e) => e.stopPropagation()}>
           <button 
             className={`card-action-btn ${vocab.is_favorite ? 'favorite' : ''}`}

@@ -90,6 +90,13 @@ export const api = {
     });
   },
 
+  createVocabularies: async (entries) => {
+    return fetchAPI('/vocabularies/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ entries }),
+    });
+  },
+
   updateVocabulary: async (id, vocabData) => {
     return fetchAPI(`/vocabularies/${id}`, {
       method: 'PUT',
@@ -100,6 +107,13 @@ export const api = {
   deleteVocabulary: async (id) => {
     return fetchAPI(`/vocabularies/${id}`, {
       method: 'DELETE',
+    });
+  },
+
+  deleteVocabularies: async (ids) => {
+    return fetchAPI('/vocabularies/bulk', {
+      method: 'DELETE',
+      body: JSON.stringify({ ids }),
     });
   },
 

@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import VocabCard from './components/VocabCard';
 import VocabModal from './components/VocabModal';
+import BulkAddModal from './components/BulkAddModal';
 import RevisionMode from './components/RevisionMode';
 import SettingsView from './components/SettingsView';
 import AboutView from './components/AboutView';
@@ -37,7 +38,15 @@ export default function App() {
   // Interactive UI States
   const [selectedVocab, setSelectedVocab] = useState(null);
   const [draftCard, setDraftCard] = useState(false);
+  const [isDraftSaving, setIsDraftSaving] = useState(false);
   const [confirmDeleteVocab, setConfirmDeleteVocab] = useState(null);
+  const [isBulkAddOpen, setIsBulkAddOpen] = useState(false);
+  const [isBulkAddSaving, setIsBulkAddSaving] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedVocabIds, setSelectedVocabIds] = useState([]);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [removingVocabIds, setRemovingVocabIds] = useState([]);
 
   // New UI States
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -146,7 +155,87 @@ export default function App() {
     setDraftCard(true);
   };
 
+  const handleBulkAddClick = () => {
+    setActiveView('dashboard');
+    setActiveTag(null);
+    setSearchQuery('');
+    setDraftCard(false);
+    setIsBulkAddOpen(true);
+  };
+
+  const handleBulkSave = async (entries) => {
+    setIsBulkAddSaving(true);
+    try {
+      const created = await api.createVocabularies(entries);
+      setVocabularies((current) => [...created, ...current]);
+      setIsBulkAddOpen(false);
+      addToast(`${created.length} ${created.length === 1 ? 'entry' : 'entries'} added to your vault`, 'success');
+    } catch (err) {
+      addToast(err.message || 'Failed to save vocabulary entries.', 'error');
+    } finally {
+      setIsBulkAddSaving(false);
+    }
+  };
+
+  const handleEnterSelection = () => {
+    setIsSelectionMode(true);
+    setSelectedVocabIds([]);
+  };
+
+  const handleCancelSelection = () => {
+    setIsSelectionMode(false);
+    setSelectedVocabIds([]);
+    setConfirmBulkDelete(false);
+  };
+
+  const handleToggleSelection = (vocab) => {
+    setSelectedVocabIds((current) => (
+      current.includes(vocab.id)
+        ? current.filter((id) => id !== vocab.id)
+        : [...current, vocab.id]
+    ));
+  };
+
+  const handleToggleSelectAllVisible = () => {
+    setSelectedVocabIds((current) => {
+      if (allVisibleSelected) return current.filter((id) => !visibleVocabIds.includes(id));
+      return [...new Set([...current, ...visibleVocabIds])];
+    });
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    if (!selectedVocabIds.length) return;
+    setIsBulkDeleting(true);
+    try {
+      const idsToDelete = [...selectedVocabIds];
+      const result = await api.deleteVocabularies(idsToDelete);
+      const idsToDeleteSet = new Set(idsToDelete);
+      setRemovingVocabIds(idsToDelete);
+      setConfirmBulkDelete(false);
+      setIsSelectionMode(false);
+      setSelectedVocabIds([]);
+      window.setTimeout(() => {
+        setVocabularies((current) => current.filter((vocab) => !idsToDeleteSet.has(vocab.id)));
+        setRemovingVocabIds((current) => current.filter((id) => !idsToDeleteSet.has(id)));
+      }, 180);
+      addToast(`${result.deletedCount ?? idsToDelete.length} ${result.deletedCount === 1 ? 'entry' : 'entries'} deleted`, 'success');
+    } catch (err) {
+      addToast(err.message || 'Failed to delete selected entries.', 'error');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const handleCardClick = (vocab) => {
+    if (isSelectionMode) {
+      handleToggleSelection(vocab);
+      return;
+    }
+    setSelectedVocab(vocab);
+  };
+
   const handleSaveDraft = async (newWordData) => {
+    setIsDraftSaving(true);
     try {
       const saved = await api.createVocabulary(newWordData);
       setVocabularies((current) => [saved, ...current]);
@@ -154,6 +243,8 @@ export default function App() {
       addToast('Vocabulary word created', 'success');
     } catch (err) {
       addToast(err.message || 'Failed to save vocabulary word.', 'error');
+    } finally {
+      setIsDraftSaving(false);
     }
   };
 
@@ -200,10 +291,16 @@ export default function App() {
   const handleDeleteConfirm = async () => {
     if (!confirmDeleteVocab) return;
     try {
-      await api.deleteVocabulary(confirmDeleteVocab.id);
-      setVocabularies((current) => current.filter(v => v.id !== confirmDeleteVocab.id));
+      const idToDelete = confirmDeleteVocab.id;
+      await api.deleteVocabulary(idToDelete);
+      setRemovingVocabIds((current) => [...new Set([...current, idToDelete])]);
+      setSelectedVocabIds((current) => current.filter((id) => id !== idToDelete));
       setConfirmDeleteVocab(null);
       setSelectedVocab(null);
+      window.setTimeout(() => {
+        setVocabularies((current) => current.filter((vocab) => vocab.id !== idToDelete));
+        setRemovingVocabIds((current) => current.filter((id) => id !== idToDelete));
+      }, 180);
       addToast('Vocabulary deleted permanently', 'success');
     } catch {
       addToast('Failed to delete vocabulary card.', 'error');
@@ -306,6 +403,15 @@ export default function App() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onAddClick={handleAddClick}
+          onBulkAddClick={handleBulkAddClick}
+          isSelectionMode={isSelectionMode}
+          onEnterSelection={handleEnterSelection}
+          onCancelSelection={handleCancelSelection}
+          selectedCount={selectedVocabIds.length}
+          visibleCount={visibleVocabIds.length}
+          allVisibleSelected={allVisibleSelected}
+          onToggleSelectAllVisible={handleToggleSelectAllVisible}
+          onBulkDeleteClick={() => setConfirmBulkDelete(true)}
           viewMode={viewMode}
           setViewMode={setViewMode}
           sortBy={sortBy}
@@ -339,6 +445,7 @@ export default function App() {
                   viewMode="list"
                   onSaveDraft={handleSaveDraft}
                   onCancelDraft={() => setDraftCard(false)}
+                  isSaving={isDraftSaving}
                 />
               )}
 
@@ -348,7 +455,11 @@ export default function App() {
                   vocab={vocab}
                   isDraft={false}
                   viewMode="list"
-                  onCardClick={setSelectedVocab}
+                  onCardClick={handleCardClick}
+                  isSelectionMode={isSelectionMode}
+                  isSelected={selectedVocabIds.includes(vocab.id)}
+                  isRemoving={removingVocabIds.includes(vocab.id)}
+                  onToggleSelection={handleToggleSelection}
                   onToggleFavorite={handleToggleFavorite}
                   onDuplicate={handleDuplicate}
                   onDeleteClick={setConfirmDeleteVocab}
@@ -383,6 +494,7 @@ export default function App() {
                   viewMode="card"
                   onSaveDraft={handleSaveDraft}
                   onCancelDraft={() => setDraftCard(false)}
+                  isSaving={isDraftSaving}
                 />
               )}
 
@@ -392,7 +504,11 @@ export default function App() {
                   vocab={vocab}
                   isDraft={false}
                   viewMode="card"
-                  onCardClick={setSelectedVocab}
+                  onCardClick={handleCardClick}
+                  isSelectionMode={isSelectionMode}
+                  isSelected={selectedVocabIds.includes(vocab.id)}
+                  isRemoving={removingVocabIds.includes(vocab.id)}
+                  onToggleSelection={handleToggleSelection}
                   onToggleFavorite={handleToggleFavorite}
                   onDuplicate={handleDuplicate}
                   onDeleteClick={setConfirmDeleteVocab}
@@ -438,6 +554,13 @@ export default function App() {
       </main>
 
       {/* Modals & Overlays */}
+      <BulkAddModal
+        isOpen={isBulkAddOpen}
+        onClose={() => setIsBulkAddOpen(false)}
+        onSave={handleBulkSave}
+        isSaving={isBulkAddSaving}
+      />
+
       {selectedVocab && (
         <VocabModal
           vocab={selectedVocab}
@@ -463,6 +586,26 @@ export default function App() {
               </button>
               <button className="confirm-btn delete" onClick={handleDeleteConfirm}>
                 Permanently Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmBulkDelete && (
+        <div className="modal-backdrop" onClick={() => !isBulkDeleting && setConfirmBulkDelete(false)} style={{ zIndex: 1200 }}>
+          <div className="modal-content confirm-dialog-content bulk-delete-confirm" onClick={(event) => event.stopPropagation()}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              <AlertTriangle size={36} style={{ color: 'var(--danger-color)' }} />
+              <h3 className="modal-title" style={{ fontSize: '18px' }}>Delete {selectedVocabIds.length} {selectedVocabIds.length === 1 ? 'entry' : 'entries'}?</h3>
+            </div>
+            <p className="about-text" style={{ fontSize: '14px' }}>
+              These selected vocabulary entries will be permanently removed from your vault. This action cannot be undone.
+            </p>
+            <div className="confirm-dialog-buttons">
+              <button className="confirm-btn cancel" onClick={() => setConfirmBulkDelete(false)} disabled={isBulkDeleting}>Cancel</button>
+              <button className="confirm-btn delete" onClick={handleBulkDeleteConfirm} disabled={isBulkDeleting}>
+                {isBulkDeleting ? <><span className="button-spinner" /> Deleting…</> : <>Delete {selectedVocabIds.length} {selectedVocabIds.length === 1 ? 'entry' : 'entries'}</>}
               </button>
             </div>
           </div>
