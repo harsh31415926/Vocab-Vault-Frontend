@@ -354,6 +354,9 @@ export default function App() {
     return result;
   }, [vocabularies, activeView, activeTag, searchQuery, sortBy]);
 
+  const visibleVocabIds = filteredVocabularies.map((vocab) => vocab.id);
+  const allVisibleSelected = visibleVocabIds.length > 0 && visibleVocabIds.every((id) => selectedVocabIds.includes(id));
+
   if (!initialized) {
     return (
       <div className="auth-container">
