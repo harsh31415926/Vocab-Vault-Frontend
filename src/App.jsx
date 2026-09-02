@@ -528,7 +528,7 @@ export default function App() {
         )}
 
         {activeView === 'revision' && (
-          <RevisionMode vocabularies={filteredVocabularies} quickStart={quickRevision} userId={user?.id || user?.email} />
+          <RevisionMode vocabularies={filteredVocabularies} quickStart={quickRevision} userId={user?.id || user?.email} onBackDashboard={() => setActiveView('dashboard')} />
         )}
 
         {activeView === 'daily-challenges' && (
