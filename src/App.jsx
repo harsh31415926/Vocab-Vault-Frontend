@@ -6,7 +6,7 @@ import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import VocabCard from './components/VocabCard';
 import VocabModal from './components/VocabModal';
-import DashboardInsights from './components/DashboardInsights';
+import DailyChallenges from './components/DailyChallenges';
 import RevisionMode from './components/RevisionMode';
 import SettingsView from './components/SettingsView';
 import AboutView from './components/AboutView';
@@ -402,12 +402,10 @@ export default function App() {
         />
 
         {activeView === 'dashboard' && (
-          <DashboardInsights
-            vocabularies={vocabularies}
-            user={user}
-            onOpenWord={setSelectedVocab}
-            onQuickRevision={() => { setQuickRevision(true); setActiveView('revision'); }}
-          />
+          <div className="dashboard-daily-entry">
+            <span><span className="dashboard-daily-streak">◆</span> Daily practice is ready</span>
+            <button type="button" onClick={() => setActiveView('daily-challenges')}>Daily Challenges <span aria-hidden="true">→</span></button>
+          </div>
         )}
 
         {isListView && (
@@ -531,6 +529,15 @@ export default function App() {
 
         {activeView === 'revision' && (
           <RevisionMode vocabularies={filteredVocabularies} quickStart={quickRevision} userId={user?.id || user?.email} />
+        )}
+
+        {activeView === 'daily-challenges' && (
+          <DailyChallenges
+            vocabularies={vocabularies}
+            user={user}
+            onOpenWord={setSelectedVocab}
+            onQuickRevision={() => { setQuickRevision(true); setActiveView('revision'); }}
+          />
         )}
 
         {activeView === 'settings' && (

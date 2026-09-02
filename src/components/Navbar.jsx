@@ -43,6 +43,7 @@ export default function Navbar({
       case 'favorites': return { eyebrow: 'Curated', title: 'Favorites', subtitle: 'The words you decided deserve a place of honor.' };
       case 'recent': return { eyebrow: 'Chronicle', title: 'Recently Added', subtitle: 'The newest additions to your personal lexicon.' };
       case 'revision': return { eyebrow: 'Practice', title: 'Revision Mode', subtitle: 'A short active-recall session for sharper retention.' };
+      case 'daily-challenges': return { eyebrow: 'Daily practice', title: 'Daily Challenges', subtitle: 'Small daily actions. Compounding vocabulary.' };
       case 'settings': return { eyebrow: 'Configuration', title: 'Settings', subtitle: 'Keep your vault portable, private, and yours.' };
       case 'about': return { eyebrow: 'Manifesto', title: 'About VocabVault', subtitle: 'A personal system for taking language seriously.' };
       default: return { eyebrow: 'Your workspace', title: 'Vocabulary Vault', subtitle: 'Collect precisely. Remember deliberately.' };

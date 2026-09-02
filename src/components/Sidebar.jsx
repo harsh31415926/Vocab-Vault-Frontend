@@ -5,6 +5,7 @@ import {
   Star,
   Clock3,
   Layers,
+  Flame,
   Settings,
   Info,
   LogOut,
@@ -43,6 +44,7 @@ export default function Sidebar({
     { id: 'favorites', label: 'Favorites', icon: Star, hint: 'Words worth keeping close' },
     { id: 'recent', label: 'Recently Added', icon: Clock3, hint: 'Your latest discoveries' },
     { id: 'revision', label: 'Revision Mode', icon: Layers, hint: 'Practice active recall' },
+    { id: 'daily-challenges', label: 'Daily Challenges', icon: Flame, hint: 'Small daily actions' },
   ];
   const utilityItems = [
     { id: 'settings', label: 'Settings', icon: Settings },
