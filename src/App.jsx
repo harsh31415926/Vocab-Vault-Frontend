@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { api, isLoggedIn } from './services/api';
 import AuthScreen from './components/AuthScreen';
 import Sidebar from './components/Sidebar';
@@ -382,7 +383,7 @@ export default function App() {
   const isListView = activeView === 'dashboard' || activeView === 'favorites' || activeView === 'recent';
 
   return (
-    <div className="app-container">
+    <motion.div className="app-container" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.22, ease: 'easeOut' }}>
       <AnimatedBackground theme={theme} />
 
       <Sidebar
@@ -630,6 +631,6 @@ export default function App() {
       />
 
       <ToastNotification toasts={toasts} onDismiss={removeToast} />
-    </div>
+    </motion.div>
   );
 }
