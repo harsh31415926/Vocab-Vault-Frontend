@@ -7,7 +7,6 @@ export default function Navbar({
   searchQuery,
   setSearchQuery,
   onAddClick,
-  onBulkAddClick,
   isSelectionMode,
   onEnterSelection,
   onCancelSelection,
@@ -104,7 +103,6 @@ export default function Navbar({
           ) : (
             <>
               <button className="select-vocab-btn" onClick={onEnterSelection} title="Select vocabulary entries"><ListChecks size={16} /> <span>Select</span></button>
-              <button className="bulk-add-btn" onClick={onBulkAddClick} title="Add multiple words"><Plus size={15} /> <span>Bulk add</span></button>
               <button className="add-vocab-btn" onClick={onAddClick} title="Add a new word" aria-label="Add a new word"><Plus size={22} /></button>
             </>
           )}

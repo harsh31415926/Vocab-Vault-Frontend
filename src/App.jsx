@@ -6,7 +6,7 @@ import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import VocabCard from './components/VocabCard';
 import VocabModal from './components/VocabModal';
-import BulkAddModal from './components/BulkAddModal';
+import DashboardInsights from './components/DashboardInsights';
 import RevisionMode from './components/RevisionMode';
 import SettingsView from './components/SettingsView';
 import AboutView from './components/AboutView';
@@ -41,8 +41,6 @@ export default function App() {
   const [draftCard, setDraftCard] = useState(false);
   const [isDraftSaving, setIsDraftSaving] = useState(false);
   const [confirmDeleteVocab, setConfirmDeleteVocab] = useState(null);
-  const [isBulkAddOpen, setIsBulkAddOpen] = useState(false);
-  const [isBulkAddSaving, setIsBulkAddSaving] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedVocabIds, setSelectedVocabIds] = useState([]);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
@@ -52,6 +50,7 @@ export default function App() {
   // New UI States
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [quickRevision, setQuickRevision] = useState(false);
   const [toasts, setToasts] = useState([]);
 
   // Loading & App Initialization States
@@ -154,28 +153,6 @@ export default function App() {
     setActiveTag(null);
     setSearchQuery('');
     setDraftCard(true);
-  };
-
-  const handleBulkAddClick = () => {
-    setActiveView('dashboard');
-    setActiveTag(null);
-    setSearchQuery('');
-    setDraftCard(false);
-    setIsBulkAddOpen(true);
-  };
-
-  const handleBulkSave = async (entries) => {
-    setIsBulkAddSaving(true);
-    try {
-      const created = await api.createVocabularies(entries);
-      setVocabularies((current) => [...created, ...current]);
-      setIsBulkAddOpen(false);
-      addToast(`${created.length} ${created.length === 1 ? 'entry' : 'entries'} added to your vault`, 'success');
-    } catch (err) {
-      addToast(err.message || 'Failed to save vocabulary entries.', 'error');
-    } finally {
-      setIsBulkAddSaving(false);
-    }
   };
 
   const handleEnterSelection = () => {
@@ -407,7 +384,6 @@ export default function App() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onAddClick={handleAddClick}
-          onBulkAddClick={handleBulkAddClick}
           isSelectionMode={isSelectionMode}
           onEnterSelection={handleEnterSelection}
           onCancelSelection={handleCancelSelection}
@@ -424,6 +400,15 @@ export default function App() {
           vocabularyCount={filteredVocabularies.length}
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         />
+
+        {activeView === 'dashboard' && (
+          <DashboardInsights
+            vocabularies={vocabularies}
+            user={user}
+            onOpenWord={setSelectedVocab}
+            onQuickRevision={() => { setQuickRevision(true); setActiveView('revision'); }}
+          />
+        )}
 
         {isListView && (
           <div style={{ marginBottom: '8px' }}>
@@ -545,7 +530,7 @@ export default function App() {
         )}
 
         {activeView === 'revision' && (
-          <RevisionMode vocabularies={filteredVocabularies} />
+          <RevisionMode vocabularies={filteredVocabularies} quickStart={quickRevision} userId={user?.id || user?.email} />
         )}
 
         {activeView === 'settings' && (
@@ -558,13 +543,6 @@ export default function App() {
       </main>
 
       {/* Modals & Overlays */}
-      <BulkAddModal
-        isOpen={isBulkAddOpen}
-        onClose={() => setIsBulkAddOpen(false)}
-        onSave={handleBulkSave}
-        isSaving={isBulkAddSaving}
-      />
-
       {selectedVocab && (
         <VocabModal
           vocab={selectedVocab}

@@ -4,7 +4,7 @@ import { Layers, Check, ChevronRight, ArrowRight, SlidersHorizontal, RotateCcw, 
 
 const shuffle = (items) => [...items].sort(() => Math.random() - 0.5);
 
-export default function RevisionMode({ vocabularies = [] }) {
+export default function RevisionMode({ vocabularies = [], quickStart = false, userId = 'guest' }) {
   const [selectedTags, setSelectedTags] = useState([]);
   const [requestedCount, setRequestedCount] = useState('20');
   const [customCount, setCustomCount] = useState('');
@@ -36,9 +36,9 @@ export default function RevisionMode({ vocabularies = [] }) {
     }
   }, [availableCount, customCount, requestedCount]);
 
-  const startSession = useCallback(() => {
+  const startSession = useCallback((requestedSize = safeRequestedCount) => {
     if (!availableCount) return;
-    const sessionDeck = shuffle(matchingVocabularies).slice(0, Math.min(safeRequestedCount, availableCount));
+    const sessionDeck = shuffle(matchingVocabularies).slice(0, Math.min(requestedSize, availableCount));
     setDeck(sessionDeck);
     setCurrentIndex(0);
     setShowMeaning(false);
@@ -46,6 +46,23 @@ export default function RevisionMode({ vocabularies = [] }) {
     setScore({ correct: 0, wrong: 0 });
     setStarted(true);
   }, [availableCount, matchingVocabularies, safeRequestedCount]);
+
+  useEffect(() => {
+    if (quickStart && availableCount) startSession(5);
+  }, [availableCount, quickStart, startSession]);
+
+  const recordRevisionResult = (vocabId, wasCorrect) => {
+    const key = `vocab_vault_revision_stats_${userId || 'guest'}`;
+    let existing = { days: {}, words: {} };
+    try { existing = JSON.parse(localStorage.getItem(key) || JSON.stringify(existing)); } catch { /* fall back to a fresh local session history */ }
+    const date = new Date().toISOString().slice(0, 10);
+    const day = existing.days?.[date] || { completed: 0, correct: 0, wrong: 0 };
+    const word = existing.words?.[vocabId] || { reviewed: 0, wrong: 0 };
+    localStorage.setItem(key, JSON.stringify({
+      days: { ...existing.days, [date]: { completed: day.completed + 1, correct: day.correct + (wasCorrect ? 1 : 0), wrong: day.wrong + (wasCorrect ? 0 : 1) } },
+      words: { ...existing.words, [vocabId]: { reviewed: word.reviewed + 1, wrong: word.wrong + (wasCorrect ? 0 : 1) } }
+    }));
+  };
 
   const resetToSetup = () => {
     setStarted(false);
@@ -62,6 +79,7 @@ export default function RevisionMode({ vocabularies = [] }) {
 
   const handleNext = (wasCorrect) => {
     setScore((current) => ({ ...current, [wasCorrect ? 'correct' : 'wrong']: current[wasCorrect ? 'correct' : 'wrong'] + 1 }));
+    recordRevisionResult(currentVocab.id, wasCorrect);
     if (currentIndex + 1 >= deck.length) {
       setCompleted(true);
     } else {
