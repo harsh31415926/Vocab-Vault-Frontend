@@ -399,6 +399,7 @@ export default function App() {
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
           vocabularyCount={filteredVocabularies.length}
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+          vocabularies={vocabularies}
         />
 
         {activeView === 'dashboard' && (

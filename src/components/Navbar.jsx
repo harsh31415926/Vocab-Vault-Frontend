@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Search, Plus, LayoutGrid, List, Menu, SlidersHorizontal, ListChecks, CheckSquare, Trash2, X } from 'lucide-react';
+import ExportPDF from './ExportPDF';
 
 export default function Navbar({
   activeView,
@@ -22,6 +23,7 @@ export default function Navbar({
   onOpenCommandPalette,
   vocabularyCount,
   onOpenMobileMenu,
+  vocabularies,
 }) {
   const searchRef = useRef(null);
 
@@ -103,6 +105,7 @@ export default function Navbar({
             </div>
           ) : (
             <>
+              <ExportPDF vocabularies={vocabularies || []} activeTag={activeTag} activeView={activeView} />
               <button className="select-vocab-btn" onClick={onEnterSelection} title="Select vocabulary entries"><ListChecks size={16} /> <span>Select</span></button>
               <button className="add-vocab-btn" onClick={onAddClick} title="Add a new word" aria-label="Add a new word"><Plus size={22} /></button>
             </>

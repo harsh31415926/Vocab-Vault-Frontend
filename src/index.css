@@ -2221,3 +2221,65 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .revision-history-row + .revision-history-row { border-top: 1px solid var(--border-color); }
 .revision-history-row strong { color: var(--text-primary); font-weight: 500; }
 @media (max-width: 560px) { .revision-session-bar { align-items: flex-start; } .revision-score { flex-wrap: wrap; gap: 8px; } .revision-result-columns { grid-template-columns: 1fr; } .revision-complete-actions { flex-direction: column; } .revision-complete-actions button { width: 100%; justify-content: center; } }
+
+/* Login submission states */
+.auth-error { display: flex; align-items: flex-start; gap: 9px; padding: 12px 13px; border: 1px solid rgba(239, 68, 68, .28); border-radius: 6px; background: rgba(239, 68, 68, .08); color: #f48b8b; font-size: 13px; line-height: 1.45; }
+.auth-error svg { flex: 0 0 auto; margin-top: 1px; }
+.auth-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; }
+.auth-button.is-loading { cursor: wait; background-color: var(--accent-hover); }
+.auth-button:disabled { cursor: wait; opacity: .82; }
+.auth-spinner { animation: authSpin .8s linear infinite; }
+.auth-loading-note { color: var(--text-faint); font: 10px var(--font-mono); line-height: 1.5; text-align: center; }
+.auth-link:disabled { cursor: wait !important; opacity: .55; text-decoration: none; }
+.form-input:disabled { cursor: wait; opacity: .68; }
+@keyframes authSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .auth-spinner { animation-duration: 1.6s; } }
+
+/* ── Export PDF ─────────────────────────────────────────── */
+.export-pdf-wrapper { position: relative; }
+.export-pdf-trigger {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 8px;
+  background: var(--card-bg); border: 1px solid var(--border-color);
+  color: var(--text-secondary); font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all .18s ease; white-space: nowrap;
+}
+.export-pdf-trigger:hover { border-color: var(--accent-color); color: var(--accent-color); }
+.export-pdf-trigger.is-generating { opacity: .65; cursor: wait; }
+.export-chevron { transition: transform .18s ease; }
+.export-chevron.rotated { transform: rotate(180deg); }
+
+.export-pdf-dropdown {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 200;
+  min-width: 200px; padding: 6px;
+  background: var(--card-bg); border: 1px solid var(--border-color);
+  border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  animation: exportDropIn .15s ease;
+}
+@keyframes exportDropIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+.export-dropdown-header {
+  padding: 6px 10px 5px; margin-bottom: 2px;
+  font-size: 10px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--text-faint);
+}
+.export-dropdown-item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 8px 10px; border: none; border-radius: 6px;
+  background: none; color: var(--text-secondary);
+  font-size: 12.5px; cursor: pointer; transition: all .12s ease; text-align: left;
+}
+.export-dropdown-item:hover { background: var(--hover-bg); color: var(--text-primary); }
+.export-dropdown-item:hover svg { color: var(--accent-color); }
+.export-item-label { flex: 1; }
+.export-item-count {
+  font-size: 10px; font-weight: 500; color: var(--text-faint);
+  background: var(--hover-bg); padding: 1px 6px; border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .export-pdf-trigger span { display: none; }
+  .export-chevron { display: none; }
+  .export-pdf-trigger { padding: 7px 8px; }
+  .export-pdf-dropdown { right: -40px; min-width: 180px; }
+}
