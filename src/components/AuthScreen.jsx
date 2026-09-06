@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { motion } from 'motion/react';
 import { api } from '../services/api';
 import { BookOpen, LoaderCircle, ShieldAlert } from 'lucide-react';
 
@@ -41,7 +42,7 @@ export default function AuthScreen({ onAuthSuccess }) {
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
+      <motion.div className="auth-card" initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}>
         <div className="auth-header">
           <div className="sidebar-logo" style={{ justifyContent: 'center', fontSize: '24px', paddingLeft: 0 }}>
             <BookOpen className="sidebar-logo-icon" size={28} />
@@ -73,7 +74,7 @@ export default function AuthScreen({ onAuthSuccess }) {
           <span>{isLogin ? "Don't have an account? " : 'Already have a vault? '}</span>
           <button type="button" className="auth-link" onClick={switchMode} disabled={loading}>{isLogin ? 'Sign Up' : 'Sign In'}</button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

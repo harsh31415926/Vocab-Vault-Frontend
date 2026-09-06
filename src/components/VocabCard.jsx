@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Star, Copy, Trash2, Check } from 'lucide-react';
+import { Copy, Trash2, Check } from 'lucide-react';
 import { motion } from 'motion/react';
+import FavoriteButton from './FavoriteButton';
 
 export default function VocabCard({ 
   vocab, 
@@ -16,11 +17,14 @@ export default function VocabCard({
   isSelected = false,
   isRemoving = false,
   onToggleSelection,
-  viewMode = 'card'
+  viewMode = 'card',
+  index = 0,
 }) {
   const [word, setWord] = useState('');
   const [meaning, setMeaning] = useState('');
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const wordInputRef = useRef(null);
+  const cardRef = useRef(null);
 
   // Focus the word input field when draft card is generated
   useEffect(() => {
@@ -28,6 +32,20 @@ export default function VocabCard({
       wordInputRef.current.focus();
     }
   }, [isDraft]);
+
+  // Track mouse position for glow effect
+  const handleMouseMove = (e) => {
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      setMousePosition({ x, y });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setMousePosition({ x: 50, y: 50 });
+  };
 
   const handleSave = (e) => {
     e.stopPropagation();
@@ -136,9 +154,26 @@ export default function VocabCard({
     );
   }
 
+  const enter = {
+    initial: { opacity: 0, y: 15 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.42, delay: Math.min(index, 18) * 0.045, ease: [0.16, 1, 0.3, 1] },
+  };
+
   if (viewMode === 'list') {
     return (
-      <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: 'easeOut' }} className={`vocab-row ${isSelected ? 'is-selected' : ''} ${isRemoving ? 'is-removing' : ''}`} onClick={() => onCardClick(vocab)}>
+      <motion.div 
+        {...enter} 
+        ref={cardRef}
+        className={`vocab-row ${isSelected ? 'is-selected' : ''} ${isRemoving ? 'is-removing' : ''}`} 
+        onClick={() => onCardClick(vocab)}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{
+          '--mouse-x': `${mousePosition.x}%`,
+          '--mouse-y': `${mousePosition.y}%`,
+        }}
+      >
         <div className="vocab-row-left">
           {isSelectionMode && (
             <button
@@ -154,16 +189,13 @@ export default function VocabCard({
               {isSelected && <Check size={13} strokeWidth={2.5} />}
             </button>
           )}
-          <button 
-            className={`row-favorite-btn ${vocab.is_favorite ? 'favorite' : ''}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleFavorite(vocab);
-            }}
+          <FavoriteButton
+            isFavorite={!!vocab.is_favorite}
+            onToggle={() => onToggleFavorite(vocab)}
+            size={14}
+            className="row-favorite-btn"
             title={vocab.is_favorite ? 'Remove from favorites' : 'Mark as favorite'}
-          >
-            <Star size={14} fill={vocab.is_favorite ? 'var(--favorite-color)' : 'none'} />
-          </button>
+          />
           
           <span className="vocab-row-word">{vocab.word}</span>
           <span className="vocab-row-divider">•</span>
@@ -211,7 +243,18 @@ export default function VocabCard({
   }
 
   return (
-    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: 'easeOut' }} className={`vocab-card ${isSelected ? 'is-selected' : ''} ${isRemoving ? 'is-removing' : ''}`} onClick={() => onCardClick(vocab)}>
+    <motion.div 
+      {...enter} 
+      ref={cardRef}
+      className={`vocab-card ${isSelected ? 'is-selected' : ''} ${isRemoving ? 'is-removing' : ''}`} 
+      onClick={() => onCardClick(vocab)}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        '--mouse-x': `${mousePosition.x}%`,
+        '--mouse-y': `${mousePosition.y}%`,
+      }}
+    >
       <div className="vocab-card-header">
         <div className="vocab-card-word-wrap">
           {isSelectionMode && (
@@ -231,13 +274,12 @@ export default function VocabCard({
           <h3 className="vocab-card-word">{vocab.word}</h3>
         </div>
         <div className="vocab-card-actions" onClick={(e) => e.stopPropagation()}>
-          <button 
-            className={`card-action-btn ${vocab.is_favorite ? 'favorite' : ''}`}
-            onClick={() => onToggleFavorite(vocab)}
+          <FavoriteButton
+            isFavorite={!!vocab.is_favorite}
+            onToggle={() => onToggleFavorite(vocab)}
+            size={16}
             title={vocab.is_favorite ? 'Remove from favorites' : 'Mark as favorite'}
-          >
-            <Star size={16} fill={vocab.is_favorite ? 'var(--favorite-color)' : 'none'} />
-          </button>
+          />
           <button 
             className="card-action-btn"
             onClick={() => onDuplicate(vocab)}

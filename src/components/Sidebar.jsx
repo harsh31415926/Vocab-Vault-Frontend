@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { motion } from 'motion/react';
 import {
   BookOpen,
   LayoutDashboard,
@@ -84,6 +85,7 @@ export default function Sidebar({
                   onClick={() => navigate(item.id)}
                   title={item.hint}
                 >
+                  {isActive && <motion.span layoutId="sidebar-active" className="sidebar-active-glow" />}
                   <Icon size={16} />
                   <span>{item.label}</span>
                   {isActive && <ChevronRight className="sidebar-active-chevron" size={14} />}

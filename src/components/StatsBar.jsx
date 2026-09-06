@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { BookMarked, CalendarDays, Flame, Star } from 'lucide-react';
+import CountUp from './CountUp';
 
 function isThisWeek(dateValue) {
   if (!dateValue) return false;
@@ -34,7 +35,7 @@ export default function StatsBar({ vocabularies = [] }) {
       {stats.map(({ label, value, icon: Icon, tone }) => (
         <div className="stat-item" key={label}>
           <span className={`stat-icon stat-icon-${tone}`}><Icon size={16} /></span>
-          <span className="stat-copy"><strong>{value}</strong><small>{label}</small></span>
+          <span className="stat-copy"><strong>{typeof value === 'number' ? <CountUp value={value} /> : value}</strong><small>{label}</small></span>
         </div>
       ))}
     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { api, isLoggedIn } from './services/api';
 import AuthScreen from './components/AuthScreen';
 import Sidebar from './components/Sidebar';
@@ -14,6 +14,8 @@ import AnimatedBackground from './components/AnimatedBackground';
 import ToastNotification from './components/ToastNotification';
 import CommandPalette from './components/CommandPalette';
 import StatsBar from './components/StatsBar';
+import DashboardHero from './components/DashboardHero';
+import PageTransition from './components/PageTransition';
 import { AlertTriangle, BookOpen } from 'lucide-react';
 
 export default function App() {
@@ -195,7 +197,7 @@ export default function App() {
       window.setTimeout(() => {
         setVocabularies((current) => current.filter((vocab) => !idsToDeleteSet.has(vocab.id)));
         setRemovingVocabIds((current) => current.filter((id) => !idsToDeleteSet.has(id)));
-      }, 180);
+      }, 320);
       addToast(`${result.deletedCount ?? idsToDelete.length} ${result.deletedCount === 1 ? 'entry' : 'entries'} deleted`, 'success');
     } catch (err) {
       addToast(err.message || 'Failed to delete selected entries.', 'error');
@@ -278,7 +280,7 @@ export default function App() {
       window.setTimeout(() => {
         setVocabularies((current) => current.filter((vocab) => vocab.id !== idToDelete));
         setRemovingVocabIds((current) => current.filter((id) => id !== idToDelete));
-      }, 180);
+      }, 320);
       addToast('Vocabulary deleted permanently', 'success');
     } catch {
       addToast('Failed to delete vocabulary card.', 'error');
@@ -357,15 +359,76 @@ export default function App() {
     );
   }
 
+
   const isListView = activeView === 'dashboard' || activeView === 'favorites' || activeView === 'recent';
+  const pageKey = `${activeTag ? `tag-${activeTag}` : activeView}-${viewMode}`;
+  const showDashboardHero = activeView === 'dashboard' && !activeTag;
+  const hideDashboardEmpty = showDashboardHero && !searchQuery && vocabularies.length === 0 && !draftCard;
+  const showEmpty = isListView && filteredVocabularies.length === 0 && !draftCard && !loading && !hideDashboardEmpty;
+
+  const emptyCopy = searchQuery
+    ? 'No cards in your vault match the active search parameters.'
+    : activeTag
+      ? `No vocabulary cards contain the tag #${activeTag}.`
+      : activeView === 'favorites'
+        ? "You haven't marked any vocabulary entries as favorites yet."
+        : activeView === 'recent'
+          ? 'No recent vocabulary has been added yet.'
+          : 'Your vocabulary vault is empty. Begin recording new words now.';
+
+  const renderCards = (mode) => (
+    <>
+      {draftCard && (
+        <VocabCard
+          isDraft={true}
+          viewMode={mode}
+          onSaveDraft={handleSaveDraft}
+          onCancelDraft={() => setDraftCard(false)}
+          isSaving={isDraftSaving}
+        />
+      )}
+      {filteredVocabularies.map((vocab, index) => (
+        <VocabCard
+          key={vocab.id}
+          vocab={vocab}
+          isDraft={false}
+          viewMode={mode}
+          index={index}
+          onCardClick={handleCardClick}
+          isSelectionMode={isSelectionMode}
+          isSelected={selectedVocabIds.includes(vocab.id)}
+          isRemoving={removingVocabIds.includes(vocab.id)}
+          onToggleSelection={handleToggleSelection}
+          onToggleFavorite={handleToggleFavorite}
+          onDuplicate={handleDuplicate}
+          onDeleteClick={setConfirmDeleteVocab}
+        />
+      ))}
+    </>
+  );
+
+  const emptyState = (
+    <div className={`empty-state ${viewMode === 'card' ? 'vault-empty-state' : ''}`} style={viewMode === 'list' ? { border: 'none', background: 'transparent', padding: '40px 24px' } : undefined}>
+      <h3 className="empty-state-title">{searchQuery || activeTag || activeView !== 'dashboard' ? 'No vocabulary found' : 'Your vault is empty.'}</h3>
+      <p className="empty-state-desc">{emptyCopy}</p>
+      {!searchQuery && (
+        <button className="empty-state-btn" type="button" onClick={handleAddClick}>
+          {vocabularies.length === 0 ? 'Add Your First Word' : 'Record a word'}
+        </button>
+      )}
+    </div>
+  );
 
   return (
-    <motion.div className="app-container" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.22, ease: 'easeOut' }}>
+    <motion.div className="app-container" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.28, ease: 'easeOut' }}>
       <AnimatedBackground theme={theme} />
 
       <Sidebar
         activeView={activeView}
-        setActiveView={setActiveView}
+        setActiveView={(view) => {
+          setQuickRevision(false);
+          setActiveView(view);
+        }}
         activeTag={activeTag}
         setActiveTag={setActiveTag}
         vocabularies={vocabularies}
@@ -402,6 +465,14 @@ export default function App() {
           vocabularies={vocabularies}
         />
 
+        {showDashboardHero && (
+          <DashboardHero
+            vocabularies={vocabularies}
+            userId={user?.id || user?.email}
+            onAddClick={handleAddClick}
+          />
+        )}
+
         {activeView === 'dashboard' && (
           <div className="dashboard-daily-entry">
             <span><span className="dashboard-daily-streak">◆</span> Daily practice is ready</span>
@@ -409,156 +480,83 @@ export default function App() {
           </div>
         )}
 
-        {isListView && (
-          <div style={{ marginBottom: '8px' }}>
+        {isListView && !showDashboardHero && (
+          <div className="stats-bar-wrap">
             <StatsBar vocabularies={filteredVocabularies} />
           </div>
         )}
 
-        {isListView && loading && (
-          <div className="loading-state" role="status">
-            <div className="loading-line loading-line-wide" />
-            <div className="loading-line" />
-            <div className="loading-line loading-line-short" />
-            <span>Syncing your vocabulary vault…</span>
-          </div>
-        )}
-
-        {isListView && (
-          viewMode === 'list' ? (
-            <div className="vocab-list">
-              {draftCard && (
-                <VocabCard
-                  isDraft={true}
-                  viewMode="list"
-                  onSaveDraft={handleSaveDraft}
-                  onCancelDraft={() => setDraftCard(false)}
-                  isSaving={isDraftSaving}
-                />
-              )}
-
-              {filteredVocabularies.map((vocab) => (
-                <VocabCard
-                  key={vocab.id}
-                  vocab={vocab}
-                  isDraft={false}
-                  viewMode="list"
-                  onCardClick={handleCardClick}
-                  isSelectionMode={isSelectionMode}
-                  isSelected={selectedVocabIds.includes(vocab.id)}
-                  isRemoving={removingVocabIds.includes(vocab.id)}
-                  onToggleSelection={handleToggleSelection}
-                  onToggleFavorite={handleToggleFavorite}
-                  onDuplicate={handleDuplicate}
-                  onDeleteClick={setConfirmDeleteVocab}
-                />
-              ))}
-
-              {filteredVocabularies.length === 0 && !draftCard && !loading && (
-                <div className="empty-state" style={{ border: 'none', background: 'transparent', padding: '40px 24px' }}>
-                  <h3 className="empty-state-title">No Vocabulary Found</h3>
-                  <p className="empty-state-desc">
-                    {searchQuery
-                      ? 'No cards in your vault match the active search parameters.'
-                      : activeTag
-                      ? `No vocabulary cards contain the tag #${activeTag}.`
-                      : activeView === 'favorites'
-                      ? "You haven't marked any vocabulary entries as favorites yet."
-                      : 'Your vocabulary vault is empty. Begin recording new words now.'}
-                  </p>
-                  {!searchQuery && (
-                    <button className="empty-state-btn" onClick={handleAddClick}>
-                      Record First Word
-                    </button>
-                  )}
+        <AnimatePresence mode="wait">
+          {isListView && (
+            <PageTransition key={pageKey} id={pageKey}>
+              {loading ? (
+                <div className="loading-state" role="status">
+                  <div className="loading-line loading-line-wide" />
+                  <div className="loading-line" />
+                  <div className="loading-line loading-line-short" />
+                  <span>Syncing your vocabulary vault…</span>
+                </div>
+              ) : viewMode === 'list' ? (
+                <div className="vocab-list">
+                  {renderCards('list')}
+                  {showEmpty && emptyState}
+                </div>
+              ) : (
+                <div className="vocab-grid">
+                  {renderCards('card')}
+                  {showEmpty && <div style={{ gridColumn: '1 / -1' }}>{emptyState}</div>}
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="vocab-grid">
-              {draftCard && (
-                <VocabCard
-                  isDraft={true}
-                  viewMode="card"
-                  onSaveDraft={handleSaveDraft}
-                  onCancelDraft={() => setDraftCard(false)}
-                  isSaving={isDraftSaving}
-                />
-              )}
+            </PageTransition>
+          )}
 
-              {filteredVocabularies.map((vocab) => (
-                <VocabCard
-                  key={vocab.id}
-                  vocab={vocab}
-                  isDraft={false}
-                  viewMode="card"
-                  onCardClick={handleCardClick}
-                  isSelectionMode={isSelectionMode}
-                  isSelected={selectedVocabIds.includes(vocab.id)}
-                  isRemoving={removingVocabIds.includes(vocab.id)}
-                  onToggleSelection={handleToggleSelection}
-                  onToggleFavorite={handleToggleFavorite}
-                  onDuplicate={handleDuplicate}
-                  onDeleteClick={setConfirmDeleteVocab}
-                />
-              ))}
+          {activeView === 'revision' && (
+            <PageTransition key="revision" id="revision">
+              <RevisionMode
+                vocabularies={filteredVocabularies}
+                quickStart={quickRevision}
+                userId={user?.id || user?.email}
+                onBackDashboard={() => { setQuickRevision(false); setActiveView('dashboard'); }}
+              />
+            </PageTransition>
+          )}
 
-              {filteredVocabularies.length === 0 && !draftCard && !loading && (
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <div className="empty-state">
-                    <h3 className="empty-state-title">No Vocabulary Found</h3>
-                    <p className="empty-state-desc">
-                      {searchQuery
-                        ? 'No cards in your vault match the active search parameters.'
-                        : activeTag
-                        ? `No vocabulary cards contain the tag #${activeTag}.`
-                        : activeView === 'favorites'
-                        ? "You haven't marked any vocabulary entries as favorites yet."
-                        : 'Your vocabulary vault is empty. Begin recording new words now.'}
-                    </p>
-                    {!searchQuery && (
-                      <button className="empty-state-btn" onClick={handleAddClick}>
-                        Record First Word
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )
-        )}
+          {activeView === 'daily-challenges' && (
+            <PageTransition key="daily-challenges" id="daily-challenges">
+              <DailyChallenges
+                vocabularies={vocabularies}
+                user={user}
+                onOpenWord={setSelectedVocab}
+                onQuickRevision={() => { setQuickRevision(true); setActiveView('revision'); }}
+              />
+            </PageTransition>
+          )}
 
-        {activeView === 'revision' && (
-          <RevisionMode vocabularies={filteredVocabularies} quickStart={quickRevision} userId={user?.id || user?.email} onBackDashboard={() => setActiveView('dashboard')} />
-        )}
+          {activeView === 'settings' && (
+            <PageTransition key="settings" id="settings">
+              <SettingsView vocabularies={vocabularies} user={user} onImportVocabulary={handleImportVocabulary} />
+            </PageTransition>
+          )}
 
-        {activeView === 'daily-challenges' && (
-          <DailyChallenges
-            vocabularies={vocabularies}
-            user={user}
-            onOpenWord={setSelectedVocab}
-            onQuickRevision={() => { setQuickRevision(true); setActiveView('revision'); }}
-          />
-        )}
-
-        {activeView === 'settings' && (
-          <SettingsView vocabularies={vocabularies} user={user} onImportVocabulary={handleImportVocabulary} />
-        )}
-
-        {activeView === 'about' && (
-          <AboutView />
-        )}
+          {activeView === 'about' && (
+            <PageTransition key="about" id="about">
+              <AboutView />
+            </PageTransition>
+          )}
+        </AnimatePresence>
       </main>
 
-      {/* Modals & Overlays */}
-      {selectedVocab && (
-        <VocabModal
-          vocab={selectedVocab}
-          onClose={() => setSelectedVocab(null)}
-          onSave={handleSaveModal}
-          onDelete={setConfirmDeleteVocab}
-        />
-      )}
+      <AnimatePresence>
+        {selectedVocab && (
+          <VocabModal
+            key={selectedVocab.id}
+            vocab={selectedVocab}
+            onClose={() => setSelectedVocab(null)}
+            onSave={handleSaveModal}
+            onDelete={setConfirmDeleteVocab}
+          />
+        )}
+      </AnimatePresence>
 
       {confirmDeleteVocab && (
         <div className="modal-backdrop" onClick={() => setConfirmDeleteVocab(null)} style={{ zIndex: 1100 }}>

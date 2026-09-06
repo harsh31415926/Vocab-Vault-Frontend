@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Search, Plus, LayoutGrid, List, Menu, SlidersHorizontal, ListChecks, CheckSquare, Trash2, X } from 'lucide-react';
+import { motion } from 'motion/react';
 import ExportPDF from './ExportPDF';
 
 export default function Navbar({
@@ -26,6 +27,7 @@ export default function Navbar({
   vocabularies,
 }) {
   const searchRef = useRef(null);
+  const [searchFocused, setSearchFocused] = useState(false);
 
   useEffect(() => {
     const handleFocusShortcut = (event) => {
@@ -69,8 +71,24 @@ export default function Navbar({
 
       {isListView && (
         <div className="header-actions">
-          <div className="search-bar-container">
-            <Search className="search-icon" size={18} />
+          <motion.div 
+            className={`search-bar-container ${searchFocused ? 'is-focused' : ''}`}
+            animate={{
+              scale: searchFocused ? 1.02 : 1,
+              boxShadow: searchFocused ? '0 0 0 3px rgba(71, 212, 208, 0.15), 0 8px 30px rgba(0, 0, 0, 0.2)' : 'none'
+            }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <motion.div
+              animate={{
+                color: searchFocused ? 'var(--accent-color)' : 'var(--text-muted)',
+                scale: searchFocused ? 1.15 : 1,
+                rotate: searchFocused ? 5 : 0
+              }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <Search className="search-icon" size={18} />
+            </motion.div>
             <input
               ref={searchRef}
               type="search"
@@ -78,10 +96,23 @@ export default function Navbar({
               className="search-input"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
               aria-label="Search vocabulary"
             />
-            <button className="search-shortcut" onClick={onOpenCommandPalette} aria-label="Open command palette"><span>⌘</span>K</button>
-          </div>
+            <motion.button 
+              className="search-shortcut" 
+              onClick={onOpenCommandPalette} 
+              aria-label="Open command palette"
+              animate={{
+                opacity: searchFocused ? 0.5 : 1,
+                scale: searchFocused ? 0.95 : 1
+              }}
+              transition={{ duration: 0.2 }}
+            >
+              <span>⌘</span>K
+            </motion.button>
+          </motion.div>
           <div className="toolbar-meta"><span>{vocabularyCount} {vocabularyCount === 1 ? 'entry' : 'entries'}</span></div>
           <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="sort-select" title="Sort vocabulary" aria-label="Sort vocabulary">
             <option value="recent">Newest first</option>
