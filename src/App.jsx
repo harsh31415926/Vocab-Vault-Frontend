@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import VocabCard from './components/VocabCard';
 import VocabModal from './components/VocabModal';
+import WordDetail from './components/WordDetail';
 import DailyChallenges from './components/DailyChallenges';
 import RevisionMode from './components/RevisionMode';
 import SettingsView from './components/SettingsView';
@@ -40,6 +41,8 @@ export default function App() {
 
   // Interactive UI States
   const [selectedVocab, setSelectedVocab] = useState(null);
+  const [detailVocab, setDetailVocab] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [draftCard, setDraftCard] = useState(false);
   const [isDraftSaving, setIsDraftSaving] = useState(false);
   const [confirmDeleteVocab, setConfirmDeleteVocab] = useState(null);
@@ -211,7 +214,36 @@ export default function App() {
       handleToggleSelection(vocab);
       return;
     }
-    setSelectedVocab(vocab);
+    setDetailVocab(vocab);
+    setIsEditMode(false);
+  };
+
+  const handleEditFromDetail = () => {
+    setIsEditMode(true);
+    setSelectedVocab(detailVocab);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailVocab(null);
+    setIsEditMode(false);
+  };
+
+  const handleSaveModal = async (id, updatedData) => {
+    try {
+      const saved = await api.updateVocabulary(id, updatedData);
+      setVocabularies((current) => current.map(v => v.id === id ? saved : v));
+      
+      // Update detail view if open
+      if (detailVocab && detailVocab.id === id) {
+        setDetailVocab(saved);
+      }
+      
+      setSelectedVocab(null);
+      setIsEditMode(false);
+      addToast('Vocabulary changes saved', 'success');
+    } catch (err) {
+      addToast(err.message || 'Failed to save vocabulary updates.', 'error');
+    }
   };
 
   const handleSaveDraft = async (newWordData) => {
@@ -287,16 +319,7 @@ export default function App() {
     }
   };
 
-  const handleSaveModal = async (id, updatedData) => {
-    try {
-      const saved = await api.updateVocabulary(id, updatedData);
-      setVocabularies((current) => current.map(v => v.id === id ? saved : v));
-      setSelectedVocab(null);
-      addToast('Vocabulary changes saved', 'success');
-    } catch (err) {
-      addToast(err.message || 'Failed to save vocabulary updates.', 'error');
-    }
-  };
+
 
   const filteredVocabularies = React.useMemo(() => {
     let result = [...vocabularies];
@@ -547,11 +570,26 @@ export default function App() {
       </main>
 
       <AnimatePresence>
+        {detailVocab && !isEditMode && (
+          <WordDetail
+            key={`detail-${detailVocab.id}`}
+            vocab={detailVocab}
+            onClose={handleCloseDetail}
+            onEdit={handleEditFromDetail}
+            onToggleFavorite={handleToggleFavorite}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {selectedVocab && (
           <VocabModal
             key={selectedVocab.id}
             vocab={selectedVocab}
-            onClose={() => setSelectedVocab(null)}
+            onClose={() => {
+              setSelectedVocab(null);
+              setIsEditMode(false);
+            }}
             onSave={handleSaveModal}
             onDelete={setConfirmDeleteVocab}
           />
