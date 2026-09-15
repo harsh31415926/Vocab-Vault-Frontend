@@ -470,6 +470,7 @@ export default function App() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onAddClick={handleAddClick}
+            onDailyChallengesClick={() => setActiveView("daily-challenges")}
           isSelectionMode={isSelectionMode}
           onEnterSelection={handleEnterSelection}
           onCancelSelection={handleCancelSelection}
@@ -493,14 +494,8 @@ export default function App() {
             vocabularies={vocabularies}
             userId={user?.id || user?.email}
             onAddClick={handleAddClick}
+            onDailyChallengesClick={() => setActiveView("daily-challenges")}
           />
-        )}
-
-        {activeView === 'dashboard' && (
-          <div className="dashboard-daily-entry">
-            <span><span className="dashboard-daily-streak">◆</span> Daily practice is ready</span>
-            <button type="button" onClick={() => setActiveView('daily-challenges')}>Daily Challenges <span aria-hidden="true">→</span></button>
-          </div>
         )}
 
         {isListView && !showDashboardHero && (

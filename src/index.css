@@ -3542,3 +3542,132 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   border-radius: 12px;
   padding: 12px;
 }
+
+/* ==========================================================================
+   PREMIUM REDESIGN - DASHBOARD INTELLIGENCE STRIP
+   ========================================================================== */
+
+.vault-intelligence-section {
+  margin-bottom: 24px;
+}
+
+.vault-intelligence-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 24px;
+  min-height: 56px;
+  box-shadow: var(--shadow-soft);
+  gap: 16px;
+}
+
+.vault-strip-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.vault-intelligence-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--accent-color);
+  text-transform: uppercase;
+}
+
+.vault-stats-inline {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+
+.stat-divider {
+  color: var(--border-color);
+  margin: 0 4px;
+}
+
+.vault-strip-right {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.vault-insight-subtle {
+  font-size: 13px;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.vault-daily-compact-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent-muted);
+  border: 1px solid var(--accent-border);
+  color: var(--accent-color);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vault-daily-compact-btn:hover {
+  background: var(--accent-color);
+  color: var(--bg-primary);
+}
+
+.daily-streak-dot {
+  color: var(--favorite-color);
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Responsive Strip */
+@media (max-width: 960px) {
+  .vault-intelligence-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px;
+  }
+  
+  .vault-strip-left,
+  .vault-strip-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 600px) {
+  .vault-strip-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .vault-stats-inline {
+    flex-wrap: wrap;
+  }
+  
+  .vault-insight-subtle {
+    display: none;
+  }
+}
