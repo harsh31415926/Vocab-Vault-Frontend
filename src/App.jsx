@@ -576,6 +576,7 @@ export default function App() {
             vocab={detailVocab}
             onClose={handleCloseDetail}
             onEdit={handleEditFromDetail}
+            onDelete={() => setConfirmDeleteVocab(detailVocab)}
             onToggleFavorite={handleToggleFavorite}
           />
         )}

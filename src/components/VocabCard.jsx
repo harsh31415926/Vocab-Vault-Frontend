@@ -1,64 +1,44 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Copy, Trash2, Check } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
+import { Trash2, Copy, Check, MoreVertical } from 'lucide-react';
 import FavoriteButton from './FavoriteButton';
 
 export default function VocabCard({ 
   vocab, 
-  isDraft, 
-  onSaveDraft, 
-  isSaving = false,
-  onCancelDraft, 
+  index, 
   onCardClick, 
+  onDeleteClick, 
   onToggleFavorite, 
-  onDuplicate, 
-  onDeleteClick,
-  isSelectionMode = false,
-  isSelected = false,
-  isRemoving = false,
+  onDuplicate,
+  isSelected,
+  isSelectionMode,
   onToggleSelection,
-  viewMode = 'card',
-  index = 0,
+  isRemoving,
+  viewMode = 'grid',
+  isDraft = false,
+  onSaveDraft,
+  onCancelDraft,
 }) {
+  const cardRef = useRef(null);
+  const wordInputRef = useRef(null);
+  
   const [word, setWord] = useState('');
   const [meaning, setMeaning] = useState('');
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const wordInputRef = useRef(null);
-  const cardRef = useRef(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
 
-  // Focus the word input field when draft card is generated
   useEffect(() => {
     if (isDraft && wordInputRef.current) {
       wordInputRef.current.focus();
     }
   }, [isDraft]);
 
-  // Track mouse position for glow effect
-  const handleMouseMove = (e) => {
-    if (cardRef.current) {
-      const rect = cardRef.current.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      setMousePosition({ x, y });
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setMousePosition({ x: 50, y: 50 });
-  };
-
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.stopPropagation();
     if (!word.trim() || !meaning.trim()) return;
-    onSaveDraft({
-      word: word.trim(),
-      meaning: meaning.trim(),
-      synonyms: [],
-      examples: [],
-      tags: [],
-      notes: '',
-      is_favorite: false
-    });
+    setIsSaving(true);
+    await onSaveDraft({ word: word.trim(), meaning: meaning.trim() });
+    setIsSaving(false);
   };
 
   const handleCancel = (e) => {
@@ -70,11 +50,7 @@ export default function VocabCard({
     if (!dateStr) return '';
     try {
       const date = new Date(dateStr);
-      return date.toLocaleDateString(undefined, { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
-      });
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
     } catch {
       return '';
     }
@@ -83,35 +59,33 @@ export default function VocabCard({
   if (isDraft) {
     if (viewMode === 'list') {
       return (
-        <div className="vocab-row draft-mode" onClick={(e) => e.stopPropagation()}>
-          <div className="vocab-row-inputs">
+        <div className="premium-list-card draft-mode" onClick={(e) => e.stopPropagation()}>
+          <div className="premium-draft-inputs">
             <input
               type="text"
               ref={wordInputRef}
               placeholder="Word..."
-              className="vocab-row-input word-input"
+              className="premium-draft-input word-input"
               value={word}
               onChange={(e) => setWord(e.target.value)}
             />
             <input
               type="text"
               placeholder="Meaning..."
-              className="vocab-row-input meaning-input"
+              className="premium-draft-input meaning-input"
               value={meaning}
               onChange={(e) => setMeaning(e.target.value)}
             />
           </div>
-          <div className="draft-actions" style={{ marginTop: 0 }}>
-            <button className="draft-btn cancel" onClick={handleCancel}>
-              Discard
-            </button>
+          <div className="premium-draft-actions">
+            <button className="premium-draft-btn cancel" onClick={handleCancel}>Discard</button>
             <button 
-              className="draft-btn save" 
+              className="premium-draft-btn save" 
               onClick={handleSave}
               disabled={isSaving || !word.trim() || !meaning.trim()}
               style={{ opacity: (isSaving || !word.trim() || !meaning.trim()) ? 0.5 : 1 }}
             >
-              {isSaving ? <><span className="button-spinner" /> Creating…</> : 'Create'}
+              {isSaving ? 'Creating…' : 'Create'}
             </button>
           </div>
         </div>
@@ -119,35 +93,33 @@ export default function VocabCard({
     }
 
     return (
-      <div className="vocab-card draft-mode" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div className="premium-vocab-card draft-mode" onClick={(e) => e.stopPropagation()}>
+        <div className="premium-draft-inputs-col">
           <input
             type="text"
             ref={wordInputRef}
             placeholder="Enter word..."
-            className="vocab-card-input word-input"
+            className="premium-draft-input word-input"
             value={word}
             onChange={(e) => setWord(e.target.value)}
           />
           <textarea
             placeholder="Enter meaning..."
-            className="vocab-card-input"
+            className="premium-draft-input meaning-input"
             style={{ resize: 'none', minHeight: '60px' }}
             value={meaning}
             onChange={(e) => setMeaning(e.target.value)}
           />
         </div>
-        <div className="draft-actions">
-          <button className="draft-btn cancel" onClick={handleCancel}>
-            Discard
-          </button>
+        <div className="premium-draft-actions">
+          <button className="premium-draft-btn cancel" onClick={handleCancel}>Discard</button>
           <button 
-            className="draft-btn save" 
+            className="premium-draft-btn save" 
             onClick={handleSave}
             disabled={isSaving || !word.trim() || !meaning.trim()}
             style={{ opacity: (isSaving || !word.trim() || !meaning.trim()) ? 0.5 : 1 }}
           >
-            {isSaving ? <><span className="button-spinner" /> Creating…</> : 'Create'}
+            {isSaving ? 'Creating…' : 'Create'}
           </button>
         </div>
       </div>
@@ -160,31 +132,38 @@ export default function VocabCard({
     transition: { duration: 0.42, delay: Math.min(index, 18) * 0.045, ease: [0.16, 1, 0.3, 1] },
   };
 
+  const handleOptionsClick = (e) => {
+    e.stopPropagation();
+    setShowOptions(!showOptions);
+  };
+
+  // Click outside to close options
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showOptions) setShowOptions(false);
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showOptions]);
+
   if (viewMode === 'list') {
     return (
       <motion.div 
         {...enter} 
         ref={cardRef}
-        className={`vocab-row ${isSelected ? 'is-selected' : ''} ${isRemoving ? 'is-removing' : ''}`} 
+        className={`premium-list-card ${isSelected ? 'is-selected' : ''} ${isRemoving ? 'is-removing' : ''}`} 
         onClick={() => onCardClick(vocab)}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        style={{
-          '--mouse-x': `${mousePosition.x}%`,
-          '--mouse-y': `${mousePosition.y}%`,
-        }}
+        whileHover={{ x: 4, backgroundColor: 'var(--bg-card-hover)' }}
       >
-        <div className="vocab-row-left">
+        <div className="premium-list-left">
           {isSelectionMode && (
             <button
               type="button"
-              className={`vocab-select-control ${isSelected ? 'selected' : ''}`}
+              className={`premium-select-control ${isSelected ? 'selected' : ''}`}
               onClick={(event) => {
                 event.stopPropagation();
                 onToggleSelection(vocab);
               }}
-              aria-label={`${isSelected ? 'Deselect' : 'Select'} ${vocab.word}`}
-              aria-pressed={isSelected}
             >
               {isSelected && <Check size={13} strokeWidth={2.5} />}
             </button>
@@ -192,50 +171,32 @@ export default function VocabCard({
           <FavoriteButton
             isFavorite={!!vocab.is_favorite}
             onToggle={() => onToggleFavorite(vocab)}
-            size={14}
-            className="row-favorite-btn"
-            title={vocab.is_favorite ? 'Remove from favorites' : 'Mark as favorite'}
+            size={16}
+            className="premium-list-fav"
           />
-          
-          <span className="vocab-row-word">{vocab.word}</span>
-          <span className="vocab-row-divider">•</span>
-          <span className="vocab-row-meaning" title={vocab.meaning}>
-            {vocab.meaning}
-          </span>
+          <span className="premium-list-word">{vocab.word}</span>
+          <span className="premium-list-divider" />
+          <span className="premium-list-meaning">{vocab.meaning}</span>
         </div>
 
-        <div className="vocab-row-right" onClick={(e) => e.stopPropagation()}>
-          {vocab.notes && (
-            <span className="vocab-row-notes-indicator" title="Has personal notes">
-              📝
-            </span>
-          )}
-
-          <div className="vocab-row-tags">
-            {vocab.tags && vocab.tags.slice(0, 1).map((tag, idx) => (
-              <span key={idx} className="tag-badge" style={{ fontSize: '10px', padding: '1px 6px' }}>{tag}</span>
+        <div className="premium-list-right" onClick={(e) => e.stopPropagation()}>
+          <div className="premium-list-tags">
+            {vocab.tags && vocab.tags.slice(0, 2).map((tag, idx) => (
+              <span key={idx} className="premium-tag">{tag}</span>
             ))}
           </div>
-
-          <span className="vocab-row-date">
-            {formatDate(vocab.created_at)}
-          </span>
-
-          <div className="vocab-row-actions">
-            <button 
-              className="card-action-btn"
-              onClick={() => onDuplicate(vocab)}
-              title="Duplicate Word"
-            >
-              <Copy size={13} />
+          <span className="premium-list-date">{formatDate(vocab.created_at)}</span>
+          
+          <div className="premium-options-wrapper">
+            <button className="premium-options-trigger" onClick={handleOptionsClick}>
+              <MoreVertical size={16} />
             </button>
-            <button 
-              className="card-action-btn"
-              onClick={() => onDeleteClick(vocab)}
-              title="Delete Word"
-            >
-              <Trash2 size={13} />
-            </button>
+            {showOptions && (
+              <div className="premium-options-menu">
+                <button onClick={() => onDuplicate(vocab)}><Copy size={14}/> Duplicate</button>
+                <button onClick={() => onDeleteClick(vocab)} className="danger"><Trash2 size={14}/> Delete</button>
+              </div>
+            )}
           </div>
         </div>
       </motion.div>
@@ -246,79 +207,59 @@ export default function VocabCard({
     <motion.div 
       {...enter} 
       ref={cardRef}
-      className={`vocab-card ${isSelected ? 'is-selected' : ''} ${isRemoving ? 'is-removing' : ''}`} 
+      className={`premium-vocab-card ${isSelected ? 'is-selected' : ''} ${isRemoving ? 'is-removing' : ''}`} 
       onClick={() => onCardClick(vocab)}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        '--mouse-x': `${mousePosition.x}%`,
-        '--mouse-y': `${mousePosition.y}%`,
-      }}
+      whileHover={{ y: -4, boxShadow: '0 12px 30px rgba(0,0,0,0.4)', borderColor: 'rgba(255,255,255,0.1)' }}
+      transition={{ duration: 0.2 }}
     >
-      <div className="vocab-card-header">
-        <div className="vocab-card-word-wrap">
+      <div className="premium-vocab-header">
+        <div className="premium-vocab-word-group">
           {isSelectionMode && (
             <button
               type="button"
-              className={`vocab-select-control ${isSelected ? 'selected' : ''}`}
+              className={`premium-select-control ${isSelected ? 'selected' : ''}`}
               onClick={(event) => {
                 event.stopPropagation();
                 onToggleSelection(vocab);
               }}
-              aria-label={`${isSelected ? 'Deselect' : 'Select'} ${vocab.word}`}
-              aria-pressed={isSelected}
             >
               {isSelected && <Check size={13} strokeWidth={2.5} />}
             </button>
           )}
-          <h3 className="vocab-card-word">{vocab.word}</h3>
+          <h3 className="premium-vocab-word">{vocab.word}</h3>
         </div>
-        <div className="vocab-card-actions" onClick={(e) => e.stopPropagation()}>
+        
+        <div className="premium-vocab-actions" onClick={(e) => e.stopPropagation()}>
           <FavoriteButton
             isFavorite={!!vocab.is_favorite}
             onToggle={() => onToggleFavorite(vocab)}
-            size={16}
-            title={vocab.is_favorite ? 'Remove from favorites' : 'Mark as favorite'}
+            size={18}
           />
-          <button 
-            className="card-action-btn"
-            onClick={() => onDuplicate(vocab)}
-            title="Duplicate Word"
-          >
-            <Copy size={15} />
-          </button>
-          <button 
-            className="card-action-btn"
-            onClick={() => onDeleteClick(vocab)}
-            title="Delete Word"
-          >
-            <Trash2 size={15} />
-          </button>
+          <div className="premium-options-wrapper">
+            <button className="premium-options-trigger" onClick={handleOptionsClick}>
+              <MoreVertical size={18} />
+            </button>
+            {showOptions && (
+              <div className="premium-options-menu">
+                <button onClick={() => onDuplicate(vocab)}><Copy size={14}/> Duplicate</button>
+                <button onClick={() => onDeleteClick(vocab)} className="danger"><Trash2 size={14}/> Delete</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <p className="vocab-card-meaning">{vocab.meaning}</p>
+      <p className="premium-vocab-meaning">{vocab.meaning}</p>
 
-      {vocab.notes && (
-        <p className="vocab-card-notes">
-          {vocab.notes.length > 90 ? `${vocab.notes.substring(0, 90)}...` : vocab.notes}
-        </p>
-      )}
-
-      <div className="vocab-card-footer">
-        <div className="vocab-card-tags">
-          {vocab.tags && vocab.tags.slice(0, 2).map((tag, idx) => (
-            <span key={idx} className="tag-badge">{tag}</span>
+      <div className="premium-vocab-footer">
+        <div className="premium-vocab-tags">
+          {vocab.tags && vocab.tags.slice(0, 3).map((tag, idx) => (
+            <span key={idx} className="premium-tag">{tag}</span>
           ))}
-          {vocab.tags && vocab.tags.length > 2 && (
-            <span className="tag-badge" style={{ color: 'var(--accent-color)' }}>
-              +{vocab.tags.length - 2}
-            </span>
+          {vocab.tags && vocab.tags.length > 3 && (
+            <span className="premium-tag extra">+{vocab.tags.length - 3}</span>
           )}
         </div>
-        <span className="vocab-card-date">
-          {formatDate(vocab.created_at)}
-        </span>
       </div>
     </motion.div>
   );

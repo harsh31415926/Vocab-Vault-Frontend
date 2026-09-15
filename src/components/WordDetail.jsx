@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Edit2, Calendar, Tag, BookOpen } from 'lucide-react';
+import { X, Edit2, Trash2, Volume2, Calendar, Tag, Play, BookOpen, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 import FavoriteButton from './FavoriteButton';
 
-export default function WordDetail({ vocab, onClose, onEdit, onToggleFavorite }) {
+export default function WordDetail({ vocab, onClose, onEdit, onDelete, onToggleFavorite }) {
   const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
@@ -27,146 +27,184 @@ export default function WordDetail({ vocab, onClose, onEdit, onToggleFavorite })
   };
 
   const handleFavoriteToggle = () => {
-    if (onToggleFavorite) {
-      onToggleFavorite(vocab);
-    }
+    if (onToggleFavorite) onToggleFavorite(vocab);
+  };
+
+  const playAudio = (text) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.speak(utterance);
   };
 
   if (!vocab) return null;
 
+  const hasSynonyms = vocab.synonyms && vocab.synonyms.length > 0;
+  const hasExamples = vocab.examples && vocab.examples.length > 0;
+  const hasNotes = vocab.notes && vocab.notes.trim();
+  const hasTags = vocab.tags && vocab.tags.length > 0;
+
+  // Determine an abstract visual color based on the word length
+  const colors = [
+    'linear-gradient(135deg, rgba(71, 212, 208, 0.15) 0%, rgba(7, 9, 13, 1) 100%)',
+    'linear-gradient(135deg, rgba(71, 212, 208, 0.1) 0%, rgba(14, 19, 24, 1) 100%)',
+    'linear-gradient(135deg, rgba(71, 212, 208, 0.2) 0%, rgba(7, 9, 13, 1) 100%)'
+  ];
+  const abstractColor = colors[vocab.word.length % colors.length];
+
   return (
     <motion.div 
-      className="modal-backdrop" 
+      className="modal-backdrop premium-backdrop" 
       onClick={onClose} 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      initial={{ opacity: 0, backdropFilter: 'blur(0px)' }} 
+      animate={{ opacity: 1, backdropFilter: 'blur(12px)' }} 
+      exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
     >
       <motion.div
-        className="modal-content word-detail-modal"
+        className="premium-modal-card"
         onClick={(e) => e.stopPropagation()}
-        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        initial={{ opacity: 0, y: 40, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 12, scale: 0.98 }}
-        transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+        exit={{ opacity: 0, y: 20, scale: 0.98 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span className="modal-title">Word Details</span>
-            <FavoriteButton
-              isFavorite={isFavorite}
-              onToggle={handleFavoriteToggle}
-              size={20}
-              title={isFavorite ? 'Remove from favorites' : 'Mark as favorite'}
-            />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <motion.button
-              className="edit-icon-btn"
-              onClick={onEdit}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              title="Edit word"
-            >
-              <Edit2 size={18} />
-            </motion.button>
-            <button className="modal-close-btn" onClick={onClose} aria-label="Close word details">
-              <X size={20} />
-            </button>
-          </div>
-        </div>
-
-        <div className="word-detail-hero">
-          <motion.p 
-            className="word-detail-display"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {vocab.word || '—'}
-          </motion.p>
-        </div>
-
-        <div className="modal-body">
-          {/* Meaning */}
-          <div className="detail-section">
-            <div className="detail-section-header">
-              <BookOpen size={16} />
-              <span className="detail-section-label">Meaning</span>
+        <div className="premium-modal-layout">
+          {/* Visual Storytelling Sidebar */}
+          <div className="premium-modal-sidebar" style={{ background: abstractColor }}>
+            <div className="premium-sidebar-graphics">
+              <div className="graphic-circle graphic-circle-1" />
+              <div className="graphic-circle graphic-circle-2" />
             </div>
-            <p className="detail-content">
-              {vocab.meaning || <span className="detail-empty">No meaning provided.</span>}
-            </p>
+            
+            <div className="premium-word-hero">
+              <motion.h1 
+                className="premium-word-title"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {vocab.word}
+              </motion.h1>
+              <motion.div 
+                className="premium-word-actions"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <button 
+                  className="premium-audio-btn" 
+                  onClick={() => playAudio(vocab.word)}
+                  title="Listen to pronunciation"
+                >
+                  <Volume2 size={20} />
+                </button>
+                <span className="premium-pos-badge">word</span>
+              </motion.div>
+            </div>
+            
+            <div className="premium-sidebar-footer">
+              <div className="premium-date">
+                <Calendar size={14} />
+                <span>Added {formatDate(vocab.created_at)}</span>
+              </div>
+            </div>
           </div>
 
-          {/* Synonyms */}
-          {vocab.synonyms && vocab.synonyms.length > 0 && (
-            <div className="detail-section">
-              <div className="detail-section-header">
-                <Tag size={16} />
-                <span className="detail-section-label">Synonyms</span>
+          {/* Content Area */}
+          <div className="premium-modal-content">
+            <div className="premium-modal-top-bar">
+              <div className="premium-top-actions">
+                <FavoriteButton
+                  isFavorite={isFavorite}
+                  onToggle={handleFavoriteToggle}
+                  size={20}
+                  className="premium-fav-btn"
+                />
+                <button className="premium-icon-btn" onClick={onEdit} title="Edit word">
+                  <Edit2 size={18} />
+                </button>
+                {onDelete && (
+                  <button className="premium-icon-btn danger" onClick={() => onDelete(vocab)} title="Delete word">
+                    <Trash2 size={18} />
+                  </button>
+                )}
               </div>
-              <div className="detail-tags">
-                {vocab.synonyms.map((syn, idx) => (
-                  <span key={idx} className="detail-tag">{syn}</span>
-                ))}
-              </div>
+              <button className="premium-close-btn" onClick={onClose} aria-label="Close">
+                <X size={24} />
+              </button>
             </div>
-          )}
 
-          {/* Examples */}
-          {vocab.examples && vocab.examples.length > 0 && (
-            <div className="detail-section">
-              <div className="detail-section-header">
-                <BookOpen size={16} />
-                <span className="detail-section-label">Examples</span>
+            <div className="premium-scrollable-content">
+              {/* Definition */}
+              <div className="premium-section">
+                <h3 className="premium-section-title">
+                  <Sparkles size={16} /> Meaning
+                </h3>
+                <p className="premium-definition">
+                  {vocab.meaning || <span className="premium-empty">No definition provided.</span>}
+                </p>
               </div>
-              <div className="detail-examples">
-                {vocab.examples.map((ex, idx) => (
-                  <p key={idx} className="detail-example">"{ex}"</p>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* Notes */}
-          {vocab.notes && (
-            <div className="detail-section">
-              <div className="detail-section-header">
-                <BookOpen size={16} />
-                <span className="detail-section-label">Notes</span>
-              </div>
-              <p className="detail-content">
-                {vocab.notes}
-              </p>
-            </div>
-          )}
+              {/* Examples */}
+              {hasExamples && (
+                <div className="premium-section">
+                  <h3 className="premium-section-title">Examples</h3>
+                  <div className="premium-examples-list">
+                    {vocab.examples.map((ex, idx) => (
+                      <div key={idx} className="premium-example-card">
+                        <span className="premium-quote-mark">"</span>
+                        <p className="premium-example-text">{ex}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          {/* Tags */}
-          {vocab.tags && vocab.tags.length > 0 && (
-            <div className="detail-section">
-              <div className="detail-section-header">
-                <Tag size={16} />
-                <span className="detail-section-label">Tags</span>
-              </div>
-              <div className="detail-tags">
-                {vocab.tags.map((tag, idx) => (
-                  <span key={idx} className="detail-tag">#{tag}</span>
-                ))}
-              </div>
-            </div>
-          )}
+              {/* Synonyms */}
+              {hasSynonyms && (
+                <div className="premium-section">
+                  <h3 className="premium-section-title">Synonyms</h3>
+                  <div className="premium-chips-container">
+                    {vocab.synonyms.map((syn, idx) => (
+                      <span key={idx} className="premium-chip synonym-chip">{syn}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          {/* Metadata */}
-          <div className="detail-section detail-metadata">
-            <div className="detail-section-header">
-              <Calendar size={16} />
-              <span className="detail-section-label">Created</span>
+              {/* Notes */}
+              {hasNotes && (
+                <div className="premium-section">
+                  <h3 className="premium-section-title">Notes</h3>
+                  <div className="premium-notes-card">
+                    <BookOpen size={16} className="premium-notes-icon" />
+                    <p className="premium-notes-text">{vocab.notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Tags */}
+              {hasTags && (
+                <div className="premium-section">
+                  <h3 className="premium-section-title">Tags</h3>
+                  <div className="premium-chips-container">
+                    {vocab.tags.map((tag, idx) => (
+                      <span key={idx} className="premium-chip tag-chip">
+                        <Tag size={12} />
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            <p className="detail-content">
-              {formatDate(vocab.created_at)}
-            </p>
+
+            {/* Call to Action Footer */}
+            <div className="premium-modal-footer">
+              <button className="premium-primary-cta" onClick={onClose}>
+                <Play size={16} />
+                Practice This Word
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>
