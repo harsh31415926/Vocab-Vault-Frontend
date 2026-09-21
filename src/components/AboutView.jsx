@@ -75,7 +75,7 @@ export default function AboutView() {
 
       <motion.section className="about-card creator-card" {...reveal}>
         <div className="about-section-heading"><span className="section-index">03</span><div><span className="header-eyebrow">The person responsible</span><h3 className="about-title">Harsh Sharma</h3></div></div>
-        <p className="creator-lead">Engineering student, who wants to get atleast 9 IELTS band, becuase he can .</p>
+        <p className="creator-lead">Engineering student, who wants to get 9 IELTS band, becuase he can .</p>
         <p className="about-text">VocabVault was built by Harsh, an engineer who apparently decided that remembering words manually was a waste of human potential. While most people forget ambitious vocabulary after learning it, I built an entire system to ensure our words—and, presumably, our intellectual superiority—remain permanently indexed.</p>
         <p className="about-text">My interests span AI with a strong focus on the convergence of AI and finance—quantitative finance, and eventually building a quantitative hedge fund—while continuously improving my English communication and vocabulary, and I want IELTS band 9 also.</p>
         <div className="interest-grid">{interests.map((interest) => <span key={interest}>{interest}</span>)}</div>
