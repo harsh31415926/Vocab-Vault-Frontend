@@ -17,7 +17,7 @@ import CommandPalette from './components/CommandPalette';
 import StatsBar from './components/StatsBar';
 import DashboardHero from './components/DashboardHero';
 import PageTransition from './components/PageTransition';
-import { AlertTriangle, BookOpen } from 'lucide-react';
+import { AlertTriangle, BookOpen, Plus } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -469,8 +469,7 @@ export default function App() {
           activeTag={activeTag}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          onAddClick={handleAddClick}
-            onDailyChallengesClick={() => setActiveView("daily-challenges")}
+          onDailyChallengesClick={() => setActiveView("daily-challenges")}
           isSelectionMode={isSelectionMode}
           onEnterSelection={handleEnterSelection}
           onCancelSelection={handleCancelSelection}
@@ -488,6 +487,21 @@ export default function App() {
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           vocabularies={vocabularies}
         />
+
+        {isListView && !isSelectionMode && (
+          <div className="persistent-add-action">
+            <button
+              className="add-vocab-btn persistent-add-vocab-btn"
+              type="button"
+              onClick={handleAddClick}
+              title="Add a new word"
+              aria-label="Add a new word"
+            >
+              <Plus size={22} />
+              <span>Add word</span>
+            </button>
+          </div>
+        )}
 
         {showDashboardHero && (
           <DashboardHero

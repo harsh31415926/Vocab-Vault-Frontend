@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, Plus, LayoutGrid, List, Menu, SlidersHorizontal, ListChecks, CheckSquare, Trash2, X } from 'lucide-react';
+import { Search, LayoutGrid, List, Menu, SlidersHorizontal, ListChecks, CheckSquare, Trash2, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import ExportPDF from './ExportPDF';
 
@@ -8,7 +8,6 @@ export default function Navbar({
   activeTag,
   searchQuery,
   setSearchQuery,
-  onAddClick,
   isSelectionMode,
   onEnterSelection,
   onCancelSelection,
@@ -138,7 +137,6 @@ export default function Navbar({
             <>
               <ExportPDF vocabularies={vocabularies || []} activeTag={activeTag} activeView={activeView} />
               <button className="select-vocab-btn" onClick={onEnterSelection} title="Select vocabulary entries"><ListChecks size={16} /> <span>Select</span></button>
-              <button className="add-vocab-btn" onClick={onAddClick} title="Add a new word" aria-label="Add a new word"><Plus size={22} /></button>
             </>
           )}
         </div>

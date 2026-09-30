@@ -3671,3 +3671,163 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     display: none;
   }
 }
+
+/* Persistent primary action and cohesive vocabulary rows. */
+.persistent-add-action {
+  position: fixed;
+  right: clamp(20px, 4vw, 64px);
+  bottom: 28px;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.persistent-add-vocab-btn {
+  width: auto;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 8px;
+  gap: 8px;
+  pointer-events: auto;
+  box-shadow: 0 8px 22px rgba(2, 15, 19, 0.34);
+}
+
+.persistent-add-vocab-btn span {
+  display: inline;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.persistent-add-vocab-btn:hover {
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent-color) 26%, rgba(2, 15, 19, 0.34));
+}
+
+.vocab-list {
+  gap: 0;
+  overflow: visible;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-card) 88%, transparent);
+  box-shadow: none;
+}
+
+.premium-list-card {
+  margin-bottom: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 0;
+  background: transparent;
+  transition: transform var(--transition-smooth), background-color var(--transition-smooth), border-color var(--transition-smooth);
+}
+
+.premium-list-card:first-child {
+  border-radius: 7px 7px 0 0;
+}
+
+.premium-list-card:last-child {
+  border-bottom: 0;
+  border-radius: 0 0 7px 7px;
+}
+
+.premium-list-card:hover {
+  background: color-mix(in srgb, var(--accent-muted) 70%, transparent);
+  border-bottom-color: var(--accent-border);
+}
+
+.premium-list-card:hover .premium-list-fav,
+.premium-list-card:hover .premium-options-trigger {
+  color: var(--accent-color);
+}
+
+.premium-list-card.is-selected {
+  background: var(--accent-muted);
+}
+
+.premium-vocab-card {
+  transition: transform var(--transition-smooth), background-color var(--transition-smooth), border-color var(--transition-smooth), box-shadow var(--transition-smooth);
+}
+
+.premium-vocab-card:hover {
+  border-color: var(--accent-border);
+  background: var(--bg-card-hover);
+}
+
+.stat-item,
+.vault-intelligence-strip {
+  transition: transform var(--transition-smooth), border-color var(--transition-smooth), background-color var(--transition-smooth);
+}
+
+.stat-item:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent-border);
+  background: color-mix(in srgb, var(--bg-card-hover) 82%, transparent);
+}
+
+.vault-intelligence-strip:hover {
+  border-color: var(--accent-border);
+  background: color-mix(in srgb, var(--bg-card-hover) 88%, transparent);
+}
+
+.vault-daily-compact-btn {
+  transition: transform var(--transition-fast), color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.vault-daily-compact-btn:hover {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .persistent-add-action {
+    right: 16px;
+    bottom: 20px;
+  }
+
+  .persistent-add-vocab-btn {
+    width: 44px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .persistent-add-vocab-btn span {
+    display: none;
+  }
+
+  .premium-list-card {
+    min-height: 64px;
+    padding: 13px 14px;
+  }
+
+  .premium-list-left {
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .premium-list-word {
+    min-width: 0;
+  }
+
+  .premium-list-divider,
+  .premium-list-right .premium-list-tags,
+  .premium-list-date {
+    display: none;
+  }
+
+  .premium-list-meaning {
+    max-width: none;
+  }
+
+  .premium-list-right {
+    gap: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .persistent-add-action {
+    right: 14px;
+    bottom: 16px;
+  }
+
+  .premium-list-meaning {
+    display: none;
+  }
+}

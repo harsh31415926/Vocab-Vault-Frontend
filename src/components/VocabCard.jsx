@@ -33,6 +33,13 @@ export default function VocabCard({
     }
   }, [isDraft]);
 
+  useEffect(() => {
+    if (isDraft || !showOptions) return undefined;
+    const handleClickOutside = () => setShowOptions(false);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isDraft, showOptions]);
+
   const handleSave = async (e) => {
     e.stopPropagation();
     if (!word.trim() || !meaning.trim()) return;
@@ -137,15 +144,6 @@ export default function VocabCard({
     setShowOptions(!showOptions);
   };
 
-  // Click outside to close options
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (showOptions) setShowOptions(false);
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [showOptions]);
-
   if (viewMode === 'list') {
     return (
       <motion.div 
@@ -153,7 +151,8 @@ export default function VocabCard({
         ref={cardRef}
         className={`premium-list-card ${isSelected ? 'is-selected' : ''} ${isRemoving ? 'is-removing' : ''}`} 
         onClick={() => onCardClick(vocab)}
-        whileHover={{ x: 4, backgroundColor: 'var(--bg-card-hover)' }}
+        whileHover={{ y: -1 }}
+        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
       >
         <div className="premium-list-left">
           {isSelectionMode && (
