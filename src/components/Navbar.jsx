@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, LayoutGrid, List, Menu, SlidersHorizontal, ListChecks, CheckSquare, Trash2, X } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Search, LayoutGrid, List, Menu, SlidersHorizontal, ListChecks, CheckSquare, Trash2, X, Check, ChevronDown } from 'lucide-react';
 import ExportPDF from './ExportPDF';
 
 export default function Navbar({
@@ -26,7 +25,9 @@ export default function Navbar({
   vocabularies,
 }) {
   const searchRef = useRef(null);
+  const sortRef = useRef(null);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
 
   useEffect(() => {
     const handleFocusShortcut = (event) => {
@@ -39,6 +40,14 @@ export default function Navbar({
     window.addEventListener('keydown', handleFocusShortcut);
     return () => window.removeEventListener('keydown', handleFocusShortcut);
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sortRef.current && !sortRef.current.contains(event.target)) setIsSortOpen(false);
+    };
+    if (isSortOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isSortOpen]);
 
   const getHeaderDetails = () => {
     if (activeTag) return { eyebrow: 'Collection', title: `#${activeTag}`, subtitle: `A focused view of words tagged “${activeTag}”.` };
@@ -70,19 +79,8 @@ export default function Navbar({
 
       {isListView && (
         <div className="header-actions">
-          <motion.div 
-            className={`search-bar-container ${searchFocused ? 'is-focused' : ''}`}
-          >
-            <motion.div
-              animate={{
-                color: searchFocused ? 'var(--accent-color)' : 'var(--text-muted)',
-                scale: searchFocused ? 1.15 : 1,
-                rotate: searchFocused ? 5 : 0
-              }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <Search className="search-icon" size={18} />
-            </motion.div>
+          <div className={`search-bar-container ${searchFocused ? 'is-focused' : ''}`}>
+            <span className="search-icon" aria-hidden="true"><Search size={18} /></span>
             <input
               ref={searchRef}
               type="search"
@@ -94,25 +92,55 @@ export default function Navbar({
               onBlur={() => setSearchFocused(false)}
               aria-label="Search vocabulary"
             />
-            <motion.button 
+            <button
               className="search-shortcut" 
               onClick={onOpenCommandPalette} 
               aria-label="Open command palette"
-              animate={{
-                opacity: searchFocused ? 0.5 : 1,
-                scale: searchFocused ? 0.95 : 1
-              }}
-              transition={{ duration: 0.2 }}
             >
               <span>⌘</span>K
-            </motion.button>
-          </motion.div>
+            </button>
+          </div>
           <div className="toolbar-meta"><span>{vocabularyCount} {vocabularyCount === 1 ? 'entry' : 'entries'}</span></div>
-          <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="sort-select" title="Sort vocabulary" aria-label="Sort vocabulary">
-            <option value="recent">Newest first</option>
-            <option value="oldest">Oldest first</option>
-            <option value="alpha">A → Z</option>
-          </select>
+          <div className="sort-control" ref={sortRef}>
+            <button
+              type="button"
+              className="sort-select sort-select-trigger"
+              onClick={() => setIsSortOpen((open) => !open)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') setIsSortOpen(false);
+              }}
+              aria-label="Sort vocabulary"
+              aria-expanded={isSortOpen}
+              aria-haspopup="menu"
+            >
+              <span>{sortBy === 'recent' ? 'Newest first' : sortBy === 'oldest' ? 'Oldest first' : 'A → Z'}</span>
+              <ChevronDown size={15} className={isSortOpen ? 'is-open' : ''} />
+            </button>
+            {isSortOpen && (
+              <div className="sort-dropdown" role="menu" aria-label="Sort options">
+                {[
+                  ['recent', 'Newest first'],
+                  ['oldest', 'Oldest first'],
+                  ['alpha', 'A → Z'],
+                ].map(([value, label]) => (
+                  <button
+                    type="button"
+                    key={value}
+                    role="menuitemradio"
+                    aria-checked={sortBy === value}
+                    className={sortBy === value ? 'is-selected' : ''}
+                    onClick={() => {
+                      setSortBy(value);
+                      setIsSortOpen(false);
+                    }}
+                  >
+                    <Check size={14} aria-hidden="true" />
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="view-toggle" aria-label="View mode">
             <button className={`view-toggle-btn ${viewMode === 'card' ? 'active' : ''}`} onClick={() => setViewMode('card')} title="Card view" aria-label="Card view"><LayoutGrid size={15} /></button>
             <button className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')} title="List view" aria-label="List view"><List size={15} /></button>
