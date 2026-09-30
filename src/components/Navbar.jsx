@@ -72,11 +72,6 @@ export default function Navbar({
         <div className="header-actions">
           <motion.div 
             className={`search-bar-container ${searchFocused ? 'is-focused' : ''}`}
-            animate={{
-              scale: searchFocused ? 1.02 : 1,
-              boxShadow: searchFocused ? '0 0 0 3px rgba(71, 212, 208, 0.15), 0 8px 30px rgba(0, 0, 0, 0.2)' : 'none'
-            }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           >
             <motion.div
               animate={{
@@ -135,7 +130,7 @@ export default function Navbar({
             </div>
           ) : (
             <>
-              <ExportPDF vocabularies={vocabularies || []} activeTag={activeTag} activeView={activeView} />
+              <ExportPDF vocabularies={vocabularies || []} activeTag={activeTag} />
               <button className="select-vocab-btn" onClick={onEnterSelection} title="Select vocabulary entries"><ListChecks size={16} /> <span>Select</span></button>
             </>
           )}

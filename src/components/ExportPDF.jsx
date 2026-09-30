@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { FileDown, ChevronDown, BookOpen, Star, Hash, Clock3 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 
-export default function ExportPDF({ vocabularies, activeTag, activeView }) {
+export default function ExportPDF({ vocabularies, activeTag }) {
   const [isOpen, setIsOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const menuRef = useRef(null);
@@ -303,8 +304,16 @@ export default function ExportPDF({ vocabularies, activeTag, activeView }) {
         {!generating && <ChevronDown size={13} className={`export-chevron ${isOpen ? 'rotated' : ''}`} />}
       </button>
 
-      {isOpen && (
-        <div className="export-pdf-dropdown" role="menu">
+      <AnimatePresence>
+        {isOpen && (
+        <motion.div
+          className="export-pdf-dropdown"
+          role="menu"
+          initial={{ opacity: 0, y: -4, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -3, scale: 0.99 }}
+          transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+        >
           <div className="export-dropdown-header">Export as PDF</div>
           {exportSets.map((set) => {
             const Icon = set.icon;
@@ -321,8 +330,9 @@ export default function ExportPDF({ vocabularies, activeTag, activeView }) {
               </button>
             );
           })}
-        </div>
-      )}
+        </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
