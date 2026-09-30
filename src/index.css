@@ -4158,6 +4158,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 43px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  box-shadow: 0 3px 10px rgba(68, 59, 112, 0.035);
+  transition: border-color var(--transition-smooth), background-color var(--transition-smooth), box-shadow var(--transition-smooth);
 }
 
 .search-icon {
@@ -4174,14 +4180,52 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   width: auto;
   min-width: 0;
   flex: 1;
+  height: auto;
   padding: 10px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.search-input:focus,
+.search-input:focus-visible {
+  outline: none;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.search-bar-container:focus-within {
+  border-color: var(--accent-color);
+  background: var(--bg-card-hover);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 22%, transparent);
 }
 
 .search-shortcut {
   position: static;
   flex: 0 0 auto;
   margin-right: 8px;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
+
+[data-theme='light'] .search-bar-container {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #ded9ea;
+}
+
+[data-theme='light'] .search-bar-container:focus-within {
+  border-color: #6963cc;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(105, 99, 204, 0.14);
+}
+
+[data-theme='light'] .search-input:focus,
+[data-theme='light'] .search-input:focus-visible { background: transparent; box-shadow: none; }
+[data-theme='light'] .search-shortcut { background: transparent; border: 0; }
 
 .sort-control {
   position: relative;
