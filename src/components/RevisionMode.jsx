@@ -3,7 +3,14 @@ import { AnimatePresence, motion } from 'motion/react';
 import { ArrowLeft, ArrowRight, Check, ChevronLeft, ChevronRight, Layers, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
 import CountUp from './CountUp';
 
-const shuffle = (items) => [...items].sort(() => Math.random() - 0.5);
+const shuffle = (items) => {
+  const arr = [...items];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
 const today = () => new Date().toISOString().slice(0, 10);
 const storageKey = (userId, suffix) => `vocab_vault_revision_${suffix}_${userId || 'guest'}`;
 const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch { return fallback; } };
@@ -44,17 +51,11 @@ export default function RevisionMode({ vocabularies = [], quickStart = false, us
 
   const startSession = useCallback((size = safeRequestedCount, sourceDeck = matchingVocabularies) => {
     if (!sourceDeck.length) return;
-    const retention = readJson(`vocab_vault_revision_stats_${userId || 'guest'}`, { words: {} }).words || {};
-    const ranked = [...sourceDeck].sort((a, b) => {
-      const aStats = retention[a.id] || { wrong: 0, hard: 0 };
-      const bStats = retention[b.id] || { wrong: 0, hard: 0 };
-      return (bStats.hard * 3 + bStats.wrong * 2) - (aStats.hard * 3 + aStats.wrong * 2);
-    });
     const targetSize = Math.min(size, sourceDeck.length);
-    const prioritySize = Math.ceil(targetSize * 0.6);
-    const nextDeck = [...shuffle(ranked.slice(0, prioritySize)), ...shuffle(ranked.slice(prioritySize))].slice(0, targetSize);
+    // Uniform random selection: Fisher-Yates shuffle the entire eligible pool, then take the first N
+    const nextDeck = shuffle(sourceDeck).slice(0, targetSize);
     setDeck(nextDeck); setCurrentIndex(0); setShowMeaning(false); setCompleted(false); setStarted(true); setScore({ correct: 0, wrong: 0 }); setAnswers({});
-  }, [matchingVocabularies, safeRequestedCount, userId]);
+  }, [matchingVocabularies, safeRequestedCount]);
 
   useEffect(() => {
     if (quickStart && !started && !completed && availableCount) startSession(5);
